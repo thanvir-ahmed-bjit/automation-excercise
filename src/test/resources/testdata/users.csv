@@ -1,0 +1,5 @@
+username,firstName,lastName,email,status,role
+csvUser001,Alice,Johnson,alice.j@example.test,Enabled,ESS
+csvUser002,Bob,Williams,bob.w@example.test,Enabled,ESS
+csvUser003,Carol,Brown,carol.b@example.test,Enabled,ESS
+

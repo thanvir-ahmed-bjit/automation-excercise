@@ -1,0 +1,9 @@
+{
+  "username": "staticUser001",
+  "firstName": "John",
+  "lastName": "Smith",
+  "email": "john.smith@example.test",
+  "status": "Enabled",
+  "role": "ESS"
+}
+

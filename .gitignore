@@ -1,0 +1,32 @@
+# Git ignore for Java/Maven/Playwright automation project
+
+# Maven build output
+target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.eclipse/
+*.classpath
+*.project
+*.settings/
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Playwright artefacts (regenerated on every run)
+target/artifacts/
+
+# Allure results (regenerated on every run)
+allure-results/
+target/allure-results/
+target/site/
+
+# Environment credentials (never commit!)
+src/test/resources/environments/prod.properties
+
