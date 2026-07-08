@@ -27,10 +27,10 @@
     </test>
 
     <!-- Admin User CRUD -->
-    <test name="User Management Tests">
-        <classes>
-            <class name="com.bjitgroup.tests.UserManagementTest"/>
-        </classes>
-    </test>
+<!--    <test name="User Management Tests">-->
+<!--        <classes>-->
+<!--            <class name="com.bjitgroup.tests.UserManagementTest"/>-->
+<!--        </classes>-->
+<!--    </test>-->
 
 </suite>

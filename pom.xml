@@ -19,6 +19,7 @@
 
         <!-- Dependency versions -->
         <playwright.version>1.49.0</playwright.version>
+        <axe.core.version>4.10.2</axe.core.version>
         <testng.version>7.11.0</testng.version>
         <allure.version>2.29.0</allure.version>
         <assertj.version>3.26.3</assertj.version>
@@ -44,6 +45,12 @@
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
             <version>${playwright.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.deque.html.axe-core</groupId>
+            <artifactId>playwright</artifactId>
+            <version>${axe.core.version}</version>
         </dependency>
 
         <!-- ===== TESTNG ===== -->
@@ -121,6 +128,8 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
         </dependency>
+
+
 
     </dependencies>
 
