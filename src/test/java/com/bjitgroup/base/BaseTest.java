@@ -1,6 +1,7 @@
 package com.bjitgroup.base;
 
 import com.bjitgroup.config.ConfigManager;
+import com.bjitgroup.context.PageManager;
 import com.bjitgroup.driver.DriverFactory;
 import com.bjitgroup.listeners.TestListener;
 import com.bjitgroup.pages.LoginPage;
@@ -38,6 +39,7 @@ public abstract class BaseTest {
     protected ConfigManager config;
     protected Page page;
     protected LoginPage loginPage;
+    protected PageManager pageManager;
     protected SoftAssertions softly;
 
     // Suite-level lifecycle
@@ -60,7 +62,8 @@ public abstract class BaseTest {
     public void beforeMethod() {
         DriverFactory.init();
         page = DriverFactory.getPage();
-        loginPage = new LoginPage(page).open();
+        pageManager = new PageManager(page, config.timeoutMs());
+        loginPage = pageManager.loginPage().open();
         softly = new SoftAssertions();
         log.info("Test initialised");
     }

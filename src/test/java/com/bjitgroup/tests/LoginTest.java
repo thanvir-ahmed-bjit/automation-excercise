@@ -1,14 +1,18 @@
 package com.bjitgroup.tests;
 
-import com.bjitgroup.base.BaseTest;
+import com.bjitgroup.context.UiContextAware;
+import com.bjitgroup.context.UiTestContext;
 import com.bjitgroup.listeners.RetryAnalyzer;
+import com.bjitgroup.listeners.TestListener;
 import com.bjitgroup.pages.DashboardPage;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Severity;
 import io.qameta.allure.SeverityLevel;
 import io.qameta.allure.Story;
+import io.qameta.allure.testng.AllureTestNg;
 import org.assertj.core.api.Assertions;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
@@ -16,7 +20,20 @@ import org.testng.annotations.Test;
  * Target: OrangeHRM demo (https://opensource-demo.orangehrmlive.com)
  */
 @Feature("Authentication")
-public class LoginTest extends BaseTest {
+@Listeners({AllureTestNg.class, TestListener.class})
+public class LoginTest implements UiContextAware {
+
+    private UiTestContext context;
+
+    @Override
+    public void setUiTestContext(UiTestContext context) {
+        this.context = context;
+    }
+
+    @Override
+    public UiTestContext getUiTestContext() {
+        return context;
+    }
 
     @Test(
             description = "Valid credentials should navigate to the dashboard",
@@ -26,7 +43,10 @@ public class LoginTest extends BaseTest {
     @Story("Valid Login")
     @Description("Enter valid admin credentials and verify the dashboard is displayed.")
     public void validCredentialsShouldLoginSuccessfully() {
-        DashboardPage dashboard = loginPage.loginAs(config.username(), config.password());
+        DashboardPage dashboard = context.pages()
+                .loginPage()
+                .open()
+                .loginAs(context.config().username(), context.config().password());
 
         Assertions.assertThat(dashboard.isLoaded())
                 .as("Dashboard should be visible after successful login")
@@ -41,11 +61,14 @@ public class LoginTest extends BaseTest {
     @Story("Invalid Login")
     @Description("Enter incorrect credentials and verify the error banner appears.")
     public void invalidCredentialsShouldShowError() {
-        loginPage.enterUsername("wrong.user@x.com")
-                 .enterPassword("WrongPassword999!")
-                 .clickLogin();
+        context.pages()
+                .loginPage()
+                .open()
+                .enterUsername("wrong.user@x.com")
+                .enterPassword("WrongPassword999!")
+                .clickLogin();
 
-        Assertions.assertThat(loginPage.getErrorMessage())
+        Assertions.assertThat(context.pages().loginPage().getErrorMessage())
                 .as("Error message should be displayed for invalid credentials")
                 .containsIgnoringCase("Invalid credentials");
     }
@@ -58,11 +81,14 @@ public class LoginTest extends BaseTest {
     @Story("Empty Credentials")
     @Description("Submit empty credentials and verify required field messages.")
     public void emptyCredentialsShouldBlockLogin() {
-        loginPage.enterUsername("")
-                 .enterPassword("")
-                 .clickLogin();
+        context.pages()
+                .loginPage()
+                .open()
+                .enterUsername("")
+                .enterPassword("")
+                .clickLogin();
 
-        Assertions.assertThat(loginPage.isLoginPageDisplayed())
+        Assertions.assertThat(context.pages().loginPage().isLoginPageDisplayed())
                 .as("Login page should still be displayed after empty submission")
                 .isTrue();
     }

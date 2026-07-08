@@ -110,7 +110,6 @@ public final class DriverFactory {
 
     private static BrowserContext newContext(Browser browser) {
         ConfigManager cfg = ConfigManager.getInstance();
-        ensureDirectories();
         return browser.newContext(new Browser.NewContextOptions()
                 .setBaseURL(cfg.baseUrl())
                 .setAcceptDownloads(true)

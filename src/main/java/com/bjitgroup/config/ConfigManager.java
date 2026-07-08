@@ -19,15 +19,21 @@ import java.util.Properties;
  */
 public final class ConfigManager {
 
-    private static final ConfigManager INSTANCE = new ConfigManager();
+    private static final ConfigManager INSTANCE = loadDefault();
 
     private final Properties config;
     private final Properties env;
 
-    private ConfigManager() {
-        this.config = PropertyLoader.load(FrameworkConstants.CONFIG_FILE);
-        String environment = resolve("environment", "qa");
-        this.env = PropertyLoader.load(FrameworkConstants.ENVIRONMENTS_DIR + "/" + environment + ".properties");
+    public ConfigManager(Properties config, Properties env) {
+        this.config = config;
+        this.env = env;
+    }
+
+    public static ConfigManager loadDefault() {
+        Properties config = PropertyLoader.load(FrameworkConstants.CONFIG_FILE);
+        String environment = resolve(config, "environment", "qa");
+        Properties env = PropertyLoader.load(FrameworkConstants.ENVIRONMENTS_DIR + "/" + environment + ".properties");
+        return new ConfigManager(config, env);
     }
 
     public static ConfigManager getInstance() {
@@ -83,9 +89,13 @@ public final class ConfigManager {
     // Internal
 
     private String resolve(String key, String defaultValue) {
+        return resolve(config, key, defaultValue);
+    }
+
+    private static String resolve(Properties props, String key, String defaultValue) {
         String sys = System.getProperty(key);
         if (StringUtils.isNotBlank(sys)) return sys;
-        return config.getProperty(key, defaultValue);
+        return props.getProperty(key, defaultValue);
     }
 }
 

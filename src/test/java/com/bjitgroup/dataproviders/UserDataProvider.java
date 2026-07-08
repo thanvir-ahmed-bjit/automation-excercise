@@ -1,7 +1,6 @@
 package com.bjitgroup.dataproviders;
 
 import com.bjitgroup.models.UserData;
-import com.bjitgroup.utils.TestDataManager;
 import org.testng.annotations.DataProvider;
 
 /**

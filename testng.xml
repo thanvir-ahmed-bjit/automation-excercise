@@ -12,10 +12,6 @@
        data-provider-thread-count="2"
        verbose="1">
 
-    <!-- Global listeners (screenshot, env info) -->
-    <listeners>
-        <listener class-name="com.bjitgroup.listeners.TestListener"/>
-    </listeners>
 
     <!-- Smoke / Authentication -->
     <test name="Login Tests">

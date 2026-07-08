@@ -1,10 +1,19 @@
 ﻿# Playwright UI Automation Framework
 
-Production-ready UI Automation Framework built with **Java 21**, **Playwright**, **TestNG**, and **Allure** - following SOLID principles and the Page Object Model pattern.
+Production-ready UI Automation Framework built with **Java 21**, **Playwright**, **TestNG**, and **Allure**, designed with composition-first enterprise architecture principles.
 
 ---
 
 ## Framework Architecture
+
+### Core Design Decisions
+
+- Composition over inheritance: tests no longer extend a shared base test class.
+- Listener-driven test lifecycle: `TestListener` creates and disposes a per-test `UiTestContext`.
+- Context injection contract: tests implement `UiContextAware` to receive execution context.
+- Session abstraction: browser lifecycle is managed by `BrowserSessionFactory` and `BrowserSession`.
+- Page composition: page objects delegate interactions to a reusable `PageActions` component.
+- Static usage minimized: static helpers remain only for lightweight utility concerns.
 
 ```
 automation-training/
@@ -22,18 +31,15 @@ automation-training/
    |  |- constants/
    |  |  |- BrowserType.java    <- Enum: CHROME | CHROMIUM | FIREFOX | EDGE
    |  |  \- FrameworkConstants.java <- Paths, timeouts
-   |  |- driver/
-   |  |  \- DriverFactory.java  <- Thread-local Playwright stack (PW -> Browser -> Context -> Page)
+   |  |- runtime/
+   |  |  |- ArtifactManager.java <- Artifact paths + directory management
+   |  |  |- BrowserSession.java  <- One browser stack per test
+   |  |  \- BrowserSessionFactory.java <- Session orchestration
    |  |- factory/
    |  |  \- BrowserFactory.java <- Launches the correct browser from config
    |  |- listeners/
    |  |  |- RetryAnalyzer.java  <- Retries failed tests (configurable count)
-   |  |  \- TestListener.java   <- Screenshot on failure + Allure env info
-   |  |- pages/
-   |  |  |- BasePage.java       <- Explicit-wait wrappers (no Thread.sleep)
-   |  |  |- LoginPage.java      <- Login POM
-   |  |  |- DashboardPage.java  <- Dashboard POM
-   |  |  \- AdminPage.java      <- Admin User Management POM
+   |  |  \- TestListener.java   <- Context orchestration + failure attachments
    |  |- utils/
    |  |  |- CustomLogger.java   <- SLF4J logger factory
    |  |  |- WaitUtils.java      <- Explicit waits (visible, hidden, URL, load-state)
@@ -58,10 +64,17 @@ automation-training/
    |     \- FrameworkException.java <- Unchecked framework exception
    \- test/
       |- java/com/bjitgroup/
-      |  |- base/
-      |  |  \- BaseTest.java   <- @BeforeSuite/@BeforeMethod/@AfterMethod/@AfterSuite
+      |  |- context/
+      |  |  |- UiContextAware.java  <- Context injection contract for test classes
+      |  |  |- UiTestContext.java   <- Per-test runtime context
+      |  |  \- PageObjectFactory.java <- Typed page-object factory
       |  |- hooks/
       |  |  \- TestHooks.java  <- Optional class-level @BeforeClass/@AfterClass
+      |  |- pages/
+      |  |  |- PageActions.java     <- Shared page interaction component
+      |  |  |- LoginPage.java       <- Login POM
+      |  |  |- DashboardPage.java   <- Dashboard POM
+      |  |  \- AdminPage.java       <- Admin User Management POM
       |  |- dataproviders/
       |  |  \- UserDataProvider.java <- TestNG DataProviders
       |  \- tests/
