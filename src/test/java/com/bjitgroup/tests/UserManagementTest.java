@@ -59,9 +59,8 @@ public class UserManagementTest implements UiContextAware {
                 .loginAs(context.config().username(), context.config().password());
         AdminPage adminPage = dashboard.goToAdmin()
                 .openUserManagement()
-                .createUser(user, DEFAULT_PASSWORD);
-
-        adminPage.searchByUsername(user.username());
+                .createUser(user, DEFAULT_PASSWORD)
+                .searchByUsername(user.username());
 
         Assertions.assertThat(adminPage.isUserInResults(user.username()))
                 .as("Newly created user '%s' should appear in search results", user.username())
