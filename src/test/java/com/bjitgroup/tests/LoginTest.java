@@ -14,7 +14,8 @@ import org.testng.annotations.Test;
 
 /**
  * Tests covering the Login feature.
- * Target: OrangeHRM demo (https://opensource-demo.orangehrmlive.com)
+ * Target: OrangeHRM demo
+ * <a href="https://opensource-demo.orangehrmlive.com">OrangeHRM Demo</a>.
  */
 @Feature("Authentication")
 @Listeners({AllureTestNg.class, TestListener.class})
