@@ -5,11 +5,8 @@ import com.bjitgroup.context.UiTestContext;
 import com.bjitgroup.listeners.RetryAnalyzer;
 import com.bjitgroup.listeners.TestListener;
 import com.bjitgroup.pages.DashboardPage;
-import io.qameta.allure.Description;
-import io.qameta.allure.Feature;
-import io.qameta.allure.Severity;
-import io.qameta.allure.SeverityLevel;
-import io.qameta.allure.Story;
+import com.bjitgroup.pages.LoginPage;
+import io.qameta.allure.*;
 import io.qameta.allure.testng.AllureTestNg;
 import org.assertj.core.api.Assertions;
 import org.testng.annotations.Listeners;
@@ -36,6 +33,7 @@ public class LoginTest implements UiContextAware {
     }
 
     @Test(
+            priority = 1,
             description = "Valid credentials should navigate to the dashboard",
             retryAnalyzer = RetryAnalyzer.class
     )
@@ -43,17 +41,25 @@ public class LoginTest implements UiContextAware {
     @Story("Valid Login")
     @Description("Enter valid admin credentials and verify the dashboard is displayed.")
     public void validCredentialsShouldLoginSuccessfully() {
-        DashboardPage dashboard = context.pages()
-                .loginPage()
-                .open()
-                .loginAs(context.config().username(), context.config().password());
 
-        Assertions.assertThat(dashboard.isLoaded())
-                .as("Dashboard should be visible after successful login")
-                .isTrue();
+        LoginPage loginPage = context.pages().loginPage();
+
+        Allure.step("Open Login page", loginPage::open);
+        Allure.step("Enter username", () ->
+                loginPage.enterUsername(context.config().username()));
+        Allure.step("Enter password", () ->
+                loginPage.enterPassword(context.config().password()));
+        Allure.step("Click Login button", loginPage::clickLogin);
+
+        DashboardPage dashboard = context.pages().dashboardPage();
+        Allure.step("Verify Dashboard page is loaded", () -> {
+            Assertions.assertThat(dashboard.isLoaded())
+                    .as("Dashboard should be visible after successful login")
+                    .isTrue();
+        });
     }
-
     @Test(
+            priority = 2,
             description = "Invalid credentials should show an error message",
             retryAnalyzer = RetryAnalyzer.class
     )
@@ -61,19 +67,24 @@ public class LoginTest implements UiContextAware {
     @Story("Invalid Login")
     @Description("Enter incorrect credentials and verify the error banner appears.")
     public void invalidCredentialsShouldShowError() {
-        context.pages()
-                .loginPage()
-                .open()
-                .enterUsername("wrong.user@x.com")
-                .enterPassword("WrongPassword999!")
-                .clickLogin();
 
-        Assertions.assertThat(context.pages().loginPage().getErrorMessage())
-                .as("Error message should be displayed for invalid credentials")
-                .containsIgnoringCase("Invalid credentials");
+        LoginPage loginPage = context.pages().loginPage();
+
+        Allure.step("Open Login page", loginPage::open);
+        Allure.step("Enter username", () ->
+                loginPage.enterUsername("wrong.user@x.com"));
+        Allure.step("Enter password", () ->
+                loginPage.enterPassword("WrongPassword999!"));
+        Allure.step("Click Login button", loginPage::clickLogin);
+        Allure.step("Verify invalid credentials error message is displayed", () -> {
+            Assertions.assertThat(loginPage.getErrorMessage())
+                    .as("Error message should be displayed for invalid credentials")
+                    .containsIgnoringCase("Invalid credentials");
+        });
     }
 
     @Test(
+            priority = 3,
             description = "Empty credentials should not allow login",
             retryAnalyzer = RetryAnalyzer.class
     )
@@ -81,16 +92,20 @@ public class LoginTest implements UiContextAware {
     @Story("Empty Credentials")
     @Description("Submit empty credentials and verify required field messages.")
     public void emptyCredentialsShouldBlockLogin() {
-        context.pages()
-                .loginPage()
-                .open()
-                .enterUsername("")
-                .enterPassword("")
-                .clickLogin();
 
-        Assertions.assertThat(context.pages().loginPage().isLoginPageDisplayed())
-                .as("Login page should still be displayed after empty submission")
-                .isTrue();
+        LoginPage loginPage = context.pages().loginPage();
+
+        Allure.step("Open Login page", loginPage::open);
+        Allure.step("Leave username empty", () ->
+                loginPage.enterUsername(""));
+        Allure.step("Leave password empty", () ->
+                loginPage.enterPassword(""));
+        Allure.step("Click Login button", loginPage::clickLogin);
+        Allure.step("Verify Login page is still displayed", () -> {
+            Assertions.assertThat(loginPage.isLoginPageDisplayed())
+                    .as("Login page should still be displayed after empty submission")
+                    .isTrue();
+        });
     }
 }
 
