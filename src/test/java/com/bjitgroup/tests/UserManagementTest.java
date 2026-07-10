@@ -1,7 +1,5 @@
 package com.bjitgroup.tests;
 
-import com.bjitgroup.context.UiContextAware;
-import com.bjitgroup.context.UiTestContext;
 import com.bjitgroup.dataproviders.UserDataProvider;
 import com.bjitgroup.listeners.RetryAnalyzer;
 import com.bjitgroup.listeners.TestListener;
@@ -26,21 +24,9 @@ import org.testng.annotations.Test;
  */
 @Feature("User Management")
 @Listeners({AllureTestNg.class, TestListener.class})
-public class UserManagementTest implements UiContextAware {
+public class UserManagementTest extends ContextAwareTest {
 
     private static final String DEFAULT_PASSWORD = "Admin@123";
-    private UiTestContext context;
-
-    @Override
-    public void setUiTestContext(UiTestContext context) {
-        this.context = context;
-    }
-
-    @Override
-    public UiTestContext getUiTestContext() {
-        return context;
-    }
-
     // Create User
 
     @Test(
@@ -53,10 +39,7 @@ public class UserManagementTest implements UiContextAware {
     @Story("Create User")
     @Description("Login -> Admin -> Add User -> fill form -> Save -> verify user appears in results.")
     public void adminShouldCreateUser(UserData user) {
-        DashboardPage dashboard = context.pages()
-                .loginPage()
-                .open()
-                .loginAs(context.config().username(), context.config().password());
+        DashboardPage dashboard = loginAsAdmin();
         AdminPage adminPage = dashboard.goToAdmin()
                 .openUserManagement()
                 .createUser(user, DEFAULT_PASSWORD)
@@ -77,10 +60,7 @@ public class UserManagementTest implements UiContextAware {
     @Story("Search User")
     @Description("Login -> Admin -> search by admin username -> verify result count > 0.")
     public void adminShouldSearchUser() {
-        DashboardPage dashboard = context.pages()
-                .loginPage()
-                .open()
-                .loginAs(context.config().username(), context.config().password());
+        DashboardPage dashboard = loginAsAdmin();
         AdminPage adminPage = dashboard.goToAdmin()
                 .openUserManagement()
 
@@ -103,10 +83,7 @@ public class UserManagementTest implements UiContextAware {
     @Story("Edit User")
     @Description("Create a user -> find in results -> click Edit -> save -> verify still on admin page.")
     public void adminShouldEditUser(UserData user) {
-        DashboardPage dashboard = context.pages()
-                .loginPage()
-                .open()
-                .loginAs(context.config().username(), context.config().password());
+        DashboardPage dashboard = loginAsAdmin();
         AdminPage adminPage = dashboard.goToAdmin()
                 .openUserManagement()
                 .createUser(user, DEFAULT_PASSWORD)
@@ -136,10 +113,7 @@ public class UserManagementTest implements UiContextAware {
     @Story("Delete User")
     @Description("Create a user -> search -> delete -> verify user is gone from results.")
     public void adminShouldDeleteUser(UserData user) {
-        DashboardPage dashboard = context.pages()
-                .loginPage()
-                .open()
-                .loginAs(context.config().username(), context.config().password());
+        DashboardPage dashboard = loginAsAdmin();
         AdminPage adminPage = dashboard.goToAdmin()
                 .openUserManagement()
                 .createUser(user, DEFAULT_PASSWORD)
@@ -155,5 +129,12 @@ public class UserManagementTest implements UiContextAware {
         Assertions.assertThat(adminPage.isUserInResults(user.username()))
                 .as("Deleted user '%s' should NOT appear in search results", user.username())
                 .isFalse();
+    }
+
+    private DashboardPage loginAsAdmin() {
+        return context.pages()
+                .loginPage()
+                .open()
+                .loginAs(context.config().username(), context.config().password());
     }
 }

@@ -8,6 +8,9 @@ import com.microsoft.playwright.options.WaitForSelectorState;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+import static com.bjitgroup.utils.ValidationUtils.validateSelector;
+import static com.bjitgroup.utils.ValidationUtils.validateText;
+
 /**
  * Provides reusable page-level operations.
  *
@@ -279,19 +282,4 @@ public final class BrowserActions {
         return locator(selector).count();
     }
 
-    // -------------------------------------------------------------------------
-    // Validation
-    // -------------------------------------------------------------------------
-
-    private void validateSelector(String selector) {
-        validateText(selector, "Selector");
-    }
-
-    private void validateText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(
-                    fieldName + " must not be null or blank"
-            );
-        }
-    }
 }

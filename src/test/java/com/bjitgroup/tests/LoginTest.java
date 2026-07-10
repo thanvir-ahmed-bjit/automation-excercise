@@ -1,7 +1,5 @@
 package com.bjitgroup.tests;
 
-import com.bjitgroup.context.UiContextAware;
-import com.bjitgroup.context.UiTestContext;
 import com.bjitgroup.listeners.RetryAnalyzer;
 import com.bjitgroup.listeners.TestListener;
 import com.bjitgroup.pages.DashboardPage;
@@ -19,19 +17,7 @@ import org.testng.annotations.Test;
  */
 @Feature("Authentication")
 @Listeners({AllureTestNg.class, TestListener.class})
-public class LoginTest implements UiContextAware {
-
-    private UiTestContext context;
-
-    @Override
-    public void setUiTestContext(UiTestContext context) {
-        this.context = context;
-    }
-
-    @Override
-    public UiTestContext getUiTestContext() {
-        return context;
-    }
+public class LoginTest extends ContextAwareTest {
 
     @Test(
             priority = 1,

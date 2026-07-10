@@ -12,6 +12,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 
+import static com.bjitgroup.utils.ValidationUtils.validateSelector;
+import static com.bjitgroup.utils.ValidationUtils.validateText;
+
 /**
  * Provides reusable user-interaction operations.
  *
@@ -362,24 +365,6 @@ public final class InputActions {
         page.mouse().wheel(deltaX, deltaY);
     }
 
-    // -------------------------------------------------------------------------
-    // Validation
-    // -------------------------------------------------------------------------
-
-    private void validateSelector(String selector) {
-        validateText(selector, "Selector");
-    }
-
-    private void validateText(
-            String value,
-            String fieldName
-    ) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(
-                    fieldName + " must not be null or blank"
-            );
-        }
-    }
 
     private void validateFiles(Path[] files) {
         Objects.requireNonNull(files, "Files must not be null");

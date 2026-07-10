@@ -1,7 +1,5 @@
 package com.bjitgroup.tests;
 
-import com.bjitgroup.context.UiContextAware;
-import com.bjitgroup.context.UiTestContext;
 import com.bjitgroup.listeners.TestListener;
 import com.deque.html.axecore.playwright.AxeBuilder;
 import com.deque.html.axecore.results.AxeResults;
@@ -18,19 +16,14 @@ import java.util.stream.Collectors;
 
 @Feature("Accessibility")
 @Listeners({AllureTestNg.class, TestListener.class})
-public class AccessibilityTest implements UiContextAware {
+public class AccessibilityTest extends ContextAwareTest {
 
-    private UiTestContext context;
-
-    @Override
-    public void setUiTestContext(UiTestContext context) {
-        this.context = context;
-    }
-
-    @Override
-    public UiTestContext getUiTestContext() {
-        return context;
-    }
+    private static final List<String> WCAG_TAGS = Arrays.asList(
+            "wcag2a",
+            "wcag2aa",
+            "wcag21a",
+            "wcag21aa"
+    );
 
     @Test(description = "Login page should not have WCAG A/AA accessibility violations")
     @Severity(SeverityLevel.CRITICAL)
@@ -40,9 +33,7 @@ public class AccessibilityTest implements UiContextAware {
                 .loginPage()
                 .open();
 
-        AxeResults results = new AxeBuilder(context.page())
-                .withTags(Arrays.asList("wcag2a", "wcag2aa", "wcag21a", "wcag21aa"))
-                .analyze();
+        AxeResults results = runWcagAudit();
 
         Assertions.assertThat(results.getViolations())
                 .as(formatViolations(results.getViolations()))
@@ -58,9 +49,7 @@ public class AccessibilityTest implements UiContextAware {
                 .open()
                 .loginAs(context.config().username(), context.config().password());
 
-        AxeResults results = new AxeBuilder(context.page())
-                .withTags(Arrays.asList("wcag2a", "wcag2aa", "wcag21a", "wcag21aa"))
-                .analyze();
+        AxeResults results = runWcagAudit();
 
         Assertions.assertThat(results.getViolations())
                 .as(formatViolations(results.getViolations()))
@@ -78,9 +67,7 @@ public class AccessibilityTest implements UiContextAware {
                 .goToAdmin()
                 .openUserManagement();
 
-        AxeResults results = new AxeBuilder(context.page())
-                .withTags(Arrays.asList("wcag2a", "wcag2aa", "wcag21a", "wcag21aa"))
-                .analyze();
+        AxeResults results = runWcagAudit();
 
         Assertions.assertThat(results.getViolations())
                 .as(formatViolations(results.getViolations()))
@@ -101,5 +88,11 @@ public class AccessibilityTest implements UiContextAware {
                         v.getNodes().size()
                 ))
                 .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    private AxeResults runWcagAudit() throws Exception {
+        return new AxeBuilder(context.page())
+                .withTags(WCAG_TAGS)
+                .analyze();
     }
 }
