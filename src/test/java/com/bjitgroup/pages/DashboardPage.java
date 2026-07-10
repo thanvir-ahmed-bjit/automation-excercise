@@ -1,53 +1,50 @@
 package com.bjitgroup.pages;
 
+import com.bjitgroup.actions.BrowserActions;
+import com.bjitgroup.actions.InputActions;
 import com.bjitgroup.context.PageManager;
-import com.microsoft.playwright.Page;
 
 import java.util.Properties;
 
 import static com.bjitgroup.utils.PropertyReader.read;
 
 /**
- * OrangeHRM Dashboard / home page.
+ * OrangeHRM Dashboard page.
  */
-public class DashboardPage {
+public final class DashboardPage {
 
-    private final Page page;
-    private final PageActions actions;
+    private final BrowserActions browser;
+    private final InputActions input;
     private final PageManager pages;
-    private final Properties loc = read("locators/dashboard-page.properties");
+    private final Properties loc =
+            read("locators/dashboard-page.properties");
 
-    public DashboardPage(Page page, PageActions actions, PageManager pages) {
-        this.page = page;
-        this.actions = actions;
+    public DashboardPage(
+            BrowserActions browser,
+            InputActions input,
+            PageManager pages
+    ) {
+        this.browser = browser;
+        this.input = input;
         this.pages = pages;
     }
 
-    // Assertions
-
     public boolean isLoaded() {
-        try {
-            actions.waitForVisible(loc.getProperty("dashboardHeader"));
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return browser.isVisible(loc.getProperty("dashboardHeader"));
     }
 
-    // Actions
-
     public LoginPage logout() {
-        actions.click(loc.getProperty("userDropdown"));
-        actions.click(loc.getProperty("logoutLink"));
-        actions.waitForUrlContains("/auth/login");
-        com.bjitgroup.utils.WaitUtils.waitForDomContentLoaded(page);
+        input.click(loc.getProperty("userDropdown"));
+        input.click(loc.getProperty("logoutLink"));
+
+        browser.waitForUrlContains("/auth/login");
+        browser.waitForDomContentLoaded();
+
         return pages.loginPage();
     }
 
     public AdminPage goToAdmin() {
-        actions.click(loc.getProperty("adminMenuLink"));
+        input.click(loc.getProperty("adminMenuLink"));
         return pages.adminPage();
     }
 }
-
-

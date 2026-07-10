@@ -1,5 +1,7 @@
 package com.bjitgroup.pages;
 
+import com.bjitgroup.actions.BrowserActions;
+import com.bjitgroup.actions.InputActions;
 import com.bjitgroup.context.PageManager;
 import com.bjitgroup.models.UserData;
 
@@ -8,105 +10,176 @@ import java.util.Properties;
 import static com.bjitgroup.utils.PropertyReader.read;
 
 /**
- * OrangeHRM Admin -> User Management page.
- * Supports create / search / edit / delete user operations.
+ * OrangeHRM Admin page.
  */
-public class AdminPage {
+public final class AdminPage {
 
-    private final PageActions actions;
-    @SuppressWarnings("unused")
+    private final BrowserActions browser;
+    private final InputActions input;
     private final PageManager pages;
-    private final Properties loc = read("locators/admin-page.properties");
+    private final Properties loc =
+            read("locators/admin-page.properties");
 
-    public AdminPage(PageActions actions, PageManager pages) {
-        this.actions = actions;
+    public AdminPage(
+            BrowserActions browser,
+            InputActions input,
+            PageManager pages
+    ) {
+        this.browser = browser;
+        this.input = input;
         this.pages = pages;
     }
 
-    // Navigation
-
-    public AdminPage openUserManagement() {
-        actions.navigate("/web/index.php/admin/viewSystemUsers");
-        actions.waitForVisible(loc.getProperty("searchUsernameInput"));
+    public AdminPage open() {
+        browser.navigate("/web/index.php/admin/viewSystemUsers");
+        browser.waitForVisible(loc.getProperty("searchUsernameInput"));
         return this;
     }
 
-    // Create User
+    /**
+     * Backward-compatible alias used by existing tests.
+     */
+    public AdminPage openUserManagement() {
+        return open();
+    }
+
+    public boolean isLoaded() {
+        return browser.isVisible(
+                loc.getProperty("adminHeader")
+        );
+    }
 
     public AdminPage clickAddUser() {
-        actions.click(loc.getProperty("addButton"));
+        input.click(loc.getProperty("addUserButton"));
         return this;
     }
 
-    public AdminPage fillUserForm(UserData user, String password) {
-        // User Role dropdown
-        actions.click(loc.getProperty("userRoleDropdown"));
-        actions.click(String.format(loc.getProperty("dropdownOption"), user.role()));
+    public AdminPage enterEmployeeName(String employeeName) {
+        input.fill(
+                loc.getProperty("employeeNameInput"),
+                employeeName
+        );
+        return this;
+    }
 
-        // Employee Name auto-complete
-        actions.fill(loc.getProperty("employeeNameInput"), "Test Ahmed");
-        actions.waitForVisible(loc.getProperty("firstAutoCompleteOption"));
-        actions.click(loc.getProperty("firstAutoCompleteOption"));
+    public AdminPage enterUsername(String username) {
+        input.fill(
+                loc.getProperty("usernameInput"),
+                username
+        );
+        return this;
+    }
 
-        // Status dropdown
-        actions.click(loc.getProperty("statusDropdown"));
-        actions.click(String.format(loc.getProperty("dropdownOption"), user.status()));
+    public AdminPage selectRole(String role) {
+        input.click(loc.getProperty("roleDropdown"));
+        input.click(String.format(
+                loc.getProperty("dropdownOptionByText"),
+                role
+        ));
+        return this;
+    }
 
-        // Username / Password
-        actions.fill(loc.getProperty("usernameInput"), user.username());
-        actions.fill(loc.getProperty("passwordInput"), password);
-        actions.fill(loc.getProperty("confirmPasswordInput"), password);
+    public AdminPage selectStatus(String status) {
+        input.click(loc.getProperty("statusDropdown"));
+        input.click(String.format(
+                loc.getProperty("dropdownOptionByText"),
+                status
+        ));
+        return this;
+    }
+
+    public AdminPage enterPassword(String password) {
+        input.fill(
+                loc.getProperty("passwordInput"),
+                password
+        );
+        return this;
+    }
+
+    public AdminPage confirmPassword(String password) {
+        input.fill(
+                loc.getProperty("confirmPasswordInput"),
+                password
+        );
         return this;
     }
 
     public AdminPage saveUser() {
-        actions.click(loc.getProperty("saveButton"));
-        actions.waitForNetworkIdle();
+        input.click(loc.getProperty("saveButton"));
+        browser.waitForNetworkIdle();
         return this;
     }
-
-    /** Full create-user workflow. */
-    public AdminPage createUser(UserData user, String password) {
-        return clickAddUser().fillUserForm(user, password).saveUser();
-    }
-
-    // Search User
 
     public AdminPage searchByUsername(String username) {
-        actions.fill(loc.getProperty("searchUsernameInput"), username);
-        actions.click(loc.getProperty("searchButton"));
-        actions.waitForVisible(loc.getProperty("resultTable"));
+        input.fill(
+                loc.getProperty("searchUsernameInput"),
+                username
+        );
+        input.click(loc.getProperty("searchButton"));
+        browser.waitForVisible(loc.getProperty("resultTable"));
         return this;
+    }
+
+    public AdminPage resetSearch() {
+        input.click(loc.getProperty("resetButton"));
+        return this;
+    }
+
+    public boolean isUserDisplayed(String username) {
+        String userRow = String.format(
+                loc.getProperty("userRowByUsername"),
+                username
+        );
+        return browser.isVisible(userRow);
     }
 
     public boolean isUserInResults(String username) {
-        return actions.isVisible(String.format(loc.getProperty("resultRow"), username));
+        return isUserDisplayed(username);
     }
 
     public int resultCount() {
-        return actions.count(loc.getProperty("resultRows"));
+        return browser.count(loc.getProperty("resultRows"));
     }
 
-    // Edit User
+    public String getSuccessMessage() {
+        return browser.textOf(
+                loc.getProperty("successMessage")
+        );
+    }
+
+    public AdminPage createUser(
+            UserData user,
+            String password
+    ) {
+        clickAddUser()
+                .enterEmployeeName(
+                        user.firstName() + " " + user.lastName()
+                )
+                .selectRole(user.role())
+                .selectStatus(user.status())
+                .enterUsername(user.username())
+                .enterPassword(password)
+                .confirmPassword(password)
+                .saveUser();
+
+        return this;
+    }
+
+    public DashboardPage returnToDashboard() {
+        input.click(loc.getProperty("dashboardMenuLink"));
+        return pages.dashboardPage();
+    }
 
     public AdminPage editFirstResult() {
-        actions.click(loc.getProperty("firstEditButton"));
-        actions.waitForNetworkIdle(); // wait for edit form to load
+        input.click(loc.getProperty("firstEditButton"));
+        browser.waitForNetworkIdle();
         return this;
     }
-
-    // Delete User
 
     public AdminPage deleteFirstResult() {
-        actions.click(loc.getProperty("firstDeleteButton"));
-        actions.click(loc.getProperty("confirmDeleteButton"));
-        return this;
-    }
-
-    // Reset Search
-
-    public AdminPage resetSearch() {
-        actions.click(loc.getProperty("resetButton"));
+        input.click(loc.getProperty("firstDeleteButton"));
+        input.click(loc.getProperty("confirmDeleteButton"));
+        browser.waitForNetworkIdle();
         return this;
     }
 }
