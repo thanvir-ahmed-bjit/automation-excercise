@@ -1,6 +1,6 @@
 package com.bjitgroup.config;
 
-import com.bjitgroup.exceptions.FrameworkException;
+import com.bjitgroup.exceptions.AutomationException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +19,7 @@ public final class PropertyLoader {
      *
      * @param resourcePath path relative to classpath root (e.g. "config/config.properties")
      * @return loaded {@link Properties}
-     * @throws FrameworkException if the resource is missing or unreadable
+     * @throws AutomationException if the resource is missing or unreadable
      */
     public static Properties load(String resourcePath) {
         try (InputStream in = Thread.currentThread()
@@ -27,14 +27,14 @@ public final class PropertyLoader {
                 .getResourceAsStream(resourcePath)) {
 
             if (in == null) {
-                throw new FrameworkException("Classpath resource not found: " + resourcePath);
+                throw new AutomationException("Classpath resource not found: " + resourcePath);
             }
             Properties props = new Properties();
             props.load(in);
             return props;
 
         } catch (IOException e) {
-            throw new FrameworkException("Failed to load resource: " + resourcePath, e);
+            throw new AutomationException("Failed to load resource: " + resourcePath, e);
         }
     }
 }

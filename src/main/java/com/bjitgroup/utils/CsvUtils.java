@@ -1,6 +1,6 @@
 package com.bjitgroup.utils;
 
-import com.bjitgroup.exceptions.FrameworkException;
+import com.bjitgroup.exceptions.AutomationException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -28,7 +28,7 @@ public final class CsvUtils {
      */
     public static List<Map<String, String>> read(String resourcePath) {
         InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
-        if (in == null) throw new FrameworkException("CSV resource not found: " + resourcePath);
+        if (in == null) throw new AutomationException("CSV resource not found: " + resourcePath);
 
         try (CSVParser parser = CSVFormat.DEFAULT.builder()
                 .setHeader()
@@ -45,7 +45,7 @@ public final class CsvUtils {
             return rows;
 
         } catch (IOException e) {
-            throw new FrameworkException("Failed to parse CSV: " + resourcePath, e);
+            throw new AutomationException("Failed to parse CSV: " + resourcePath, e);
         }
     }
 }

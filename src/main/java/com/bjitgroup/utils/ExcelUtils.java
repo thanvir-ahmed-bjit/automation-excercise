@@ -1,6 +1,6 @@
 package com.bjitgroup.utils;
 
-import com.bjitgroup.exceptions.FrameworkException;
+import com.bjitgroup.exceptions.AutomationException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -27,11 +27,11 @@ public final class ExcelUtils {
      */
     public static List<Map<String, String>> readSheet(String resourcePath, String sheetName) {
         InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
-        if (in == null) throw new FrameworkException("Excel resource not found: " + resourcePath);
+        if (in == null) throw new AutomationException("Excel resource not found: " + resourcePath);
 
         try (Workbook wb = new XSSFWorkbook(in)) {
             Sheet sheet = wb.getSheet(sheetName);
-            if (sheet == null) throw new FrameworkException("Sheet not found: " + sheetName);
+            if (sheet == null) throw new AutomationException("Sheet not found: " + sheetName);
 
             DataFormatter fmt = new DataFormatter();
             Row headerRow = sheet.getRow(0);
@@ -54,7 +54,7 @@ public final class ExcelUtils {
             return rows;
 
         } catch (IOException e) {
-            throw new FrameworkException("Failed to parse Excel: " + resourcePath, e);
+            throw new AutomationException("Failed to parse Excel: " + resourcePath, e);
         }
     }
 }

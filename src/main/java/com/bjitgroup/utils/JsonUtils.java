@@ -1,6 +1,6 @@
 package com.bjitgroup.utils;
 
-import com.bjitgroup.exceptions.FrameworkException;
+import com.bjitgroup.exceptions.AutomationException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -23,7 +23,7 @@ public final class JsonUtils {
         try (InputStream in = stream(resourcePath)) {
             return MAPPER.readValue(in, clazz);
         } catch (IOException e) {
-            throw new FrameworkException("Failed to read JSON: " + resourcePath, e);
+            throw new AutomationException("Failed to read JSON: " + resourcePath, e);
         }
     }
 
@@ -32,7 +32,7 @@ public final class JsonUtils {
         try (InputStream in = stream(resourcePath)) {
             return MAPPER.readValue(in, new TypeReference<>() {});
         } catch (IOException e) {
-            throw new FrameworkException("Failed to read JSON list: " + resourcePath, e);
+            throw new AutomationException("Failed to read JSON list: " + resourcePath, e);
         }
     }
 
@@ -41,13 +41,13 @@ public final class JsonUtils {
         try (InputStream in = stream(resourcePath)) {
             return MAPPER.readValue(in, new TypeReference<>() {});
         } catch (IOException e) {
-            throw new FrameworkException("Failed to read JSON map: " + resourcePath, e);
+            throw new AutomationException("Failed to read JSON map: " + resourcePath, e);
         }
     }
 
     private static InputStream stream(String resourcePath) {
         InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
-        if (in == null) throw new FrameworkException("JSON resource not found: " + resourcePath);
+        if (in == null) throw new AutomationException("JSON resource not found: " + resourcePath);
         return in;
     }
 }
