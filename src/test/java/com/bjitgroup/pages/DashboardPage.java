@@ -29,8 +29,15 @@ public final class DashboardPage {
         this.pages = pages;
     }
 
+    /**
+     * Returns {@code true} once the dashboard header is visible, waiting up to the
+     * configured timeout.  Uses {@link BrowserActions#waitForVisible} rather than
+     * an instant snapshot because this method is called immediately after navigation
+     * and the header may not yet be in the DOM.
+     */
     public boolean isLoaded() {
-        return browser.isVisible(loc.getProperty("dashboardHeader"));
+        browser.waitForVisible(loc.getProperty("dashboardHeader"));
+        return true;
     }
 
     public LoginPage logout() {

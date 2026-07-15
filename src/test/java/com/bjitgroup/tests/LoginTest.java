@@ -1,22 +1,25 @@
 package com.bjitgroup.tests;
 
 import com.bjitgroup.listeners.RetryAnalyzer;
-import com.bjitgroup.listeners.TestListener;
 import com.bjitgroup.pages.DashboardPage;
 import com.bjitgroup.pages.LoginPage;
-import io.qameta.allure.*;
-import io.qameta.allure.testng.AllureTestNg;
+import io.qameta.allure.Allure;
+import io.qameta.allure.Description;
+import io.qameta.allure.Feature;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import org.assertj.core.api.Assertions;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
  * Tests covering the Login feature.
  * Target: OrangeHRM demo
  * <a href="https://opensource-demo.orangehrmlive.com">OrangeHRM Demo</a>.
+ *
+ * <p>Listeners are declared once on {@link com.bjitgroup.base.BaseTest}.</p>
  */
 @Feature("Authentication")
-@Listeners({AllureTestNg.class, TestListener.class})
 public class LoginTest extends ContextAwareTest {
 
     @Test(
@@ -29,22 +32,22 @@ public class LoginTest extends ContextAwareTest {
     @Description("Enter valid admin credentials and verify the dashboard is displayed.")
     public void validCredentialsShouldLoginSuccessfully() {
 
-        LoginPage loginPage = context.pages().loginPage();
+        LoginPage loginPage = pages().loginPage();
 
         Allure.step("Open Login page", loginPage::open);
         Allure.step("Enter username", () ->
-                loginPage.enterUsername(context.config().username()));
+                loginPage.enterUsername(context().config().username()));
         Allure.step("Enter password", () ->
-                loginPage.enterPassword(context.config().password()));
+                loginPage.enterPassword(context().config().password()));
         Allure.step("Click Login button", loginPage::clickLogin);
 
-        DashboardPage dashboard = context.pages().dashboardPage();
-        Allure.step("Verify Dashboard page is loaded", () -> {
-            Assertions.assertThat(dashboard.isLoaded())
-                    .as("Dashboard should be visible after successful login")
-                    .isTrue();
-        });
+        DashboardPage dashboard = pages().dashboardPage();
+        Allure.step("Verify Dashboard page is loaded", () ->
+                Assertions.assertThat(dashboard.isLoaded())
+                        .as("Dashboard should be visible after successful login")
+                        .isTrue());
     }
+
     @Test(
             priority = 2,
             description = "Invalid credentials should show an error message",
@@ -55,7 +58,7 @@ public class LoginTest extends ContextAwareTest {
     @Description("Enter incorrect credentials and verify the error banner appears.")
     public void invalidCredentialsShouldShowError() {
 
-        LoginPage loginPage = context.pages().loginPage();
+        LoginPage loginPage = pages().loginPage();
 
         Allure.step("Open Login page", loginPage::open);
         Allure.step("Enter username", () ->
@@ -63,11 +66,10 @@ public class LoginTest extends ContextAwareTest {
         Allure.step("Enter password", () ->
                 loginPage.enterPassword("WrongPassword999!"));
         Allure.step("Click Login button", loginPage::clickLogin);
-        Allure.step("Verify invalid credentials error message is displayed", () -> {
-            Assertions.assertThat(loginPage.getErrorMessage())
-                    .as("Error message should be displayed for invalid credentials")
-                    .containsIgnoringCase("Invalid credentials");
-        });
+        Allure.step("Verify error message is displayed", () ->
+                Assertions.assertThat(loginPage.getErrorMessage())
+                        .as("Error message should be displayed for invalid credentials")
+                        .containsIgnoringCase("Invalid credentials"));
     }
 
     @Test(
@@ -80,20 +82,15 @@ public class LoginTest extends ContextAwareTest {
     @Description("Submit empty credentials and verify required field messages.")
     public void emptyCredentialsShouldBlockLogin() {
 
-        LoginPage loginPage = context.pages().loginPage();
+        LoginPage loginPage = pages().loginPage();
 
         Allure.step("Open Login page", loginPage::open);
-        Allure.step("Leave username empty", () ->
-                loginPage.enterUsername(""));
-        Allure.step("Leave password empty", () ->
-                loginPage.enterPassword(""));
+        Allure.step("Leave username empty", () -> loginPage.enterUsername(""));
+        Allure.step("Leave password empty", () -> loginPage.enterPassword(""));
         Allure.step("Click Login button", loginPage::clickLogin);
-        Allure.step("Verify Login page is still displayed", () -> {
-            Assertions.assertThat(loginPage.isLoginPageDisplayed())
-                    .as("Login page should still be displayed after empty submission")
-                    .isTrue();
-        });
+        Allure.step("Verify Login page is still displayed", () ->
+                Assertions.assertThat(loginPage.isLoginPageDisplayed())
+                        .as("Login page should still be displayed after empty submission")
+                        .isTrue());
     }
 }
-
-

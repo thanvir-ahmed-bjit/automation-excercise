@@ -14,8 +14,9 @@ public final class FrameworkConstants {
     public static final String TEST_DATA_DIR    = "testdata";
 
     // Default timing
-    public static final int DEFAULT_TIMEOUT_MS = 20_000;
-    public static final int DEFAULT_SLOW_MO_MS = 0;
+    public static final int DEFAULT_TIMEOUT_MS            = 20_000;
+    public static final int DEFAULT_NAVIGATION_TIMEOUT_MS = 60_000;
+    public static final int DEFAULT_SLOW_MO_MS            = 0;
 
     // Output artifact directories
     public static final Path ARTIFACTS_DIR  = Path.of("target", "artifacts");

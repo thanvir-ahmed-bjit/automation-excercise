@@ -78,10 +78,15 @@ public final class LoginPage {
         return pages.dashboardPage();
     }
 
+    /**
+     * Returns {@code true} once the login button is visible, waiting up to the
+     * configured timeout.  Uses {@link BrowserActions#waitForVisible} because
+     * this method is called immediately after navigation and the button may not
+     * yet be rendered.
+     */
     public boolean isLoginPageDisplayed() {
-        return pageActions.isVisible(
-                loc.getProperty("loginButton")
-        );
+        pageActions.waitForVisible(loc.getProperty("loginButton"));
+        return true;
     }
 
     public String getErrorMessage() {

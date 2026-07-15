@@ -7,15 +7,17 @@ import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Tracing;
 import org.slf4j.Logger;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Encapsulates one Playwright browser stack for a single test.
- * <p>
- * Manages lifecycle of Playwright, Browser, BrowserContext, and Page.
- * Cleanup operations are independent and idempotent to ensure all resources close
- * even if individual operations fail.
- * </p>
+ * Encapsulates one Playwright browser stack for a single test invocation.
+ *
+ * <p>Manages the lifecycle of Playwright, Browser, BrowserContext, and Page.
+ * Each cleanup step runs independently so that a failure in one step does not
+ * prevent subsequent steps from executing.</p>
+ *
+ * <p>This class is idempotent: calling {@link #close} more than once is safe.</p>
  */
 public class BrowserSession {
 
@@ -25,6 +27,8 @@ public class BrowserSession {
     private final Page page;
     private final ArtifactManager artifactManager;
     private final Logger logger;
+    /** Whether tracing was started during session creation. */
+    private final boolean tracingEnabled;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public BrowserSession(
@@ -33,14 +37,16 @@ public class BrowserSession {
             BrowserContext context,
             Page page,
             ArtifactManager artifactManager,
-            Logger logger
+            Logger logger,
+            boolean tracingEnabled
     ) {
-        this.playwright = playwright;
-        this.browser = browser;
-        this.context = context;
-        this.page = page;
-        this.artifactManager = artifactManager;
-        this.logger = logger;
+        this.playwright      = Objects.requireNonNull(playwright,      "Playwright must not be null");
+        this.browser         = Objects.requireNonNull(browser,         "Browser must not be null");
+        this.context         = Objects.requireNonNull(context,         "BrowserContext must not be null");
+        this.page            = Objects.requireNonNull(page,            "Page must not be null");
+        this.artifactManager = Objects.requireNonNull(artifactManager, "ArtifactManager must not be null");
+        this.logger          = Objects.requireNonNull(logger,          "Logger must not be null");
+        this.tracingEnabled  = tracingEnabled;
     }
 
     public Page page() {
@@ -57,36 +63,44 @@ public class BrowserSession {
 
     /**
      * Closes the browser session.
-     * Stops tracing, saves artifacts, and releases all resources.
-     * Each cleanup operation runs independently to ensure completion even if errors occur.
      *
-     * @param testName the test name (used for artifact file naming)
+     * <p>Stops tracing (only if it was started), then closes the BrowserContext,
+     * Browser, and Playwright instance in order. Each step runs independently.
+     * This method is idempotent — additional calls are no-ops.</p>
+     *
+     * @param executionName unique name used for trace and artifact file naming;
+     *                      must not be {@code null}
      */
-    public void close(String testName) {
+    public void close(String executionName) {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        stopTracingSafely(testName);
+        stopTracingSafely(executionName);
         closeContextSafely();
         closeBrowserSafely();
         closePlaywrightSafely();
     }
 
-    private void stopTracingSafely(String testName) {
+    // -----------------------------------------------------------------------
+    // Independent cleanup steps
+    // -----------------------------------------------------------------------
+
+    private void stopTracingSafely(String executionName) {
+        if (!tracingEnabled) {
+            return;
+        }
         try {
-            if (context != null) {
-                context.tracing().stop(new Tracing.StopOptions().setPath(artifactManager.tracePath(testName)));
-            }
+            context.tracing().stop(
+                    new Tracing.StopOptions().setPath(artifactManager.tracePath(executionName))
+            );
         } catch (Exception ex) {
-            logger.warn("Error stopping tracing for test '{}'", testName, ex);
+            logger.warn("Error stopping tracing for '{}'", executionName, ex);
         }
     }
 
     private void closeContextSafely() {
         try {
-            if (context != null) {
-                context.close();
-            }
+            context.close();
         } catch (Exception ex) {
             logger.warn("Error closing browser context", ex);
         }
@@ -94,9 +108,7 @@ public class BrowserSession {
 
     private void closeBrowserSafely() {
         try {
-            if (browser != null) {
-                browser.close();
-            }
+            browser.close();
         } catch (Exception ex) {
             logger.warn("Error closing browser", ex);
         }
@@ -104,12 +116,9 @@ public class BrowserSession {
 
     private void closePlaywrightSafely() {
         try {
-            if (playwright != null) {
-                playwright.close();
-            }
+            playwright.close();
         } catch (Exception ex) {
             logger.warn("Error closing Playwright", ex);
         }
     }
 }
-

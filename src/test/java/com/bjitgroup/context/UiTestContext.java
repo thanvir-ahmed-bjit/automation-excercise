@@ -66,10 +66,9 @@ public class UiTestContext {
 
     /**
      * Close the browser session.
-     * @param testName the test name (used for artifact file naming)
+     * @param executionName the test name (used for artifact file naming)
      */
-    public void close(String testName) {
-        session.close(testName);
+    public void close(String executionName) {
+        session.close(executionName);
     }
 }
-
