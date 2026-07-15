@@ -12,14 +12,19 @@ import java.util.Objects;
 /**
  * Creates typed page objects for the current test.
  *
- * <p>Each call constructs a new page-object instance backed by the same
- * {@link BrowserActions} and {@link InputActions}, which are themselves
+ * <p>Page objects are created lazily and cached per PageManager instance,
+ * while sharing the same {@link BrowserActions} and {@link InputActions}
  * bound to the test-scoped {@link Page}.</p>
  */
 public final class PageManager {
 
     private final BrowserActions browserActions;
     private final InputActions inputActions;
+
+    // Lazily created and cached per PageManager instance (which is scoped to one UiTestContext)
+    private LoginPage loginPage;
+    private DashboardPage dashboardPage;
+    private AdminPage adminPage;
 
     public PageManager(Page page, int timeoutMs) {
         Objects.requireNonNull(page, "Page must not be null");
@@ -32,14 +37,23 @@ public final class PageManager {
     }
 
     public LoginPage loginPage() {
-        return new LoginPage(browserActions, inputActions, this);
+        if (loginPage == null) {
+            loginPage = new LoginPage(browserActions, inputActions, this);
+        }
+        return loginPage;
     }
 
     public DashboardPage dashboardPage() {
-        return new DashboardPage(browserActions, inputActions, this);
+        if (dashboardPage == null) {
+            dashboardPage = new DashboardPage(browserActions, inputActions, this);
+        }
+        return dashboardPage;
     }
 
     public AdminPage adminPage() {
-        return new AdminPage(browserActions, inputActions, this);
+        if (adminPage == null) {
+            adminPage = new AdminPage(browserActions, inputActions, this);
+        }
+        return adminPage;
     }
 }

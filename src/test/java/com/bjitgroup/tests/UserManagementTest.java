@@ -1,5 +1,6 @@
 package com.bjitgroup.tests;
 
+import com.bjitgroup.base.BaseTest;
 import com.bjitgroup.dataproviders.UserDataProvider;
 import com.bjitgroup.listeners.RetryAnalyzer;
 import com.bjitgroup.models.UserData;
@@ -22,7 +23,7 @@ import org.testng.annotations.Test;
  * <p>Listeners are declared once on {@link com.bjitgroup.base.BaseTest}.</p>
  */
 @Feature("User Management")
-public class UserManagementTest extends ContextAwareTest {
+public class UserManagementTest extends BaseTest {
 
     private static final String DEFAULT_PASSWORD = "Admin@123";
 

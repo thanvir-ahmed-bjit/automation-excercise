@@ -122,13 +122,15 @@ public final class BrowserActions {
     }
 
     /**
-     * Waits for the network to become idle.
+     * Waits for an arbitrary page load state.
      *
-     * <p>Use sparingly — many modern applications continuously perform
-     * background network requests, which makes this wait unreliable.</p>
+     * <p>This keeps exceptional states like {@link LoadState#NETWORKIDLE}
+     * available without exposing a dedicated convenience method for a state
+     * that is often unreliable on modern applications.</p>
      */
-    public void waitForNetworkIdle() {
-        page.waitForLoadState(LoadState.NETWORKIDLE,
+    public void waitForLoadState(LoadState loadState) {
+        page.waitForLoadState(
+                Objects.requireNonNull(loadState, "LoadState must not be null"),
                 new Page.WaitForLoadStateOptions().setTimeout(timeoutMs));
     }
 

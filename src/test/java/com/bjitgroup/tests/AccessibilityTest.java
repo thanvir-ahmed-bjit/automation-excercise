@@ -1,5 +1,6 @@
 package com.bjitgroup.tests;
 
+import com.bjitgroup.base.BaseTest;
 import com.deque.html.axecore.playwright.AxeBuilder;
 import com.deque.html.axecore.results.AxeResults;
 import com.deque.html.axecore.results.Rule;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
  * <p>Listeners are declared once on {@link com.bjitgroup.base.BaseTest}.</p>
  */
 @Feature("Accessibility")
-public class AccessibilityTest extends ContextAwareTest {
+public class AccessibilityTest extends BaseTest {
 
     private static final List<String> WCAG_TAGS = Arrays.asList(
             "wcag2a", "wcag2aa", "wcag21a", "wcag21aa"

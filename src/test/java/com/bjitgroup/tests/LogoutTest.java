@@ -1,5 +1,6 @@
 package com.bjitgroup.tests;
 
+import com.bjitgroup.base.BaseTest;
 import com.bjitgroup.listeners.RetryAnalyzer;
 import com.bjitgroup.pages.DashboardPage;
 import com.bjitgroup.pages.LoginPage;
@@ -16,7 +17,7 @@ import org.testng.annotations.Test;
  * <p>Listeners are declared once on {@link com.bjitgroup.base.BaseTest}.</p>
  */
 @Feature("Authentication")
-public class LogoutTest extends ContextAwareTest {
+public class LogoutTest extends BaseTest {
 
     @Test(
             description = "Authenticated user should be able to log out",

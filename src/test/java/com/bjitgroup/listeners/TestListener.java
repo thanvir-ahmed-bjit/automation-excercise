@@ -121,7 +121,7 @@ public class TestListener implements ITestListener, IInvokedMethodListener {
             // 4. Log test start.
             LOG.info(">> TEST STARTED  : {}", qualifiedName(result));
 
-        } catch (Exception ex) {
+        } catch (RuntimeException ex) {
             LOG.error("Failed to initialize browser session for test '{}'",
                     qualifiedName(result), ex);
 
@@ -146,11 +146,7 @@ public class TestListener implements ITestListener, IInvokedMethodListener {
 
             // Rethrow — prevents the test body from running with an
             // uninitialized context.
-            if (ex instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new RuntimeException(
-                    "Browser session initialization failed for test: " + qualifiedName(result), ex);
+            throw ex;
         }
     }
 
@@ -304,15 +300,17 @@ public class TestListener implements ITestListener, IInvokedMethodListener {
      * Builds a filesystem-safe execution name that is unique per test
      * invocation, even across retries and parallel DataProvider threads.
      *
-     * <p>Format: {@code ClassName_methodName_threadId_timestamp}</p>
-     * <p>Example: {@code LoginTest_validLogin_24_1721045123456}</p>
+     * <p>Format: {@code ClassName_methodName_threadId_invocationCount_timestamp}</p>
+     * <p>Example: {@code LoginTest_validLogin_24_1_1721045123456}</p>
      */
     private static String buildExecutionName(ITestResult result) {
         String className  = result.getTestClass().getRealClass().getSimpleName();
         String methodName = result.getMethod().getMethodName();
-        long threadId     = Thread.currentThread().getId();
+        long threadId     = Thread.currentThread().threadId();
+        int invocationCount = result.getMethod().getCurrentInvocationCount();
         long timestamp    = System.currentTimeMillis();
-        String raw = className + "_" + methodName + "_" + threadId + "_" + timestamp;
+        String raw = className + "_" + methodName + "_" + threadId + "_"
+                + invocationCount + "_" + timestamp;
         return raw.replaceAll("[^A-Za-z0-9._-]", "_");
     }
 

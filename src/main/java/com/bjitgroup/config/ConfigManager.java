@@ -5,6 +5,7 @@ import com.bjitgroup.constants.FrameworkConstants;
 import com.bjitgroup.exceptions.AutomationException;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -29,8 +30,8 @@ public final class ConfigManager {
     private final Properties env;
 
     public ConfigManager(Properties config, Properties env) {
-        this.config = config;
-        this.env    = env;
+        this.config = Objects.requireNonNull(config, "Config properties must not be null");
+        this.env    = Objects.requireNonNull(env, "Environment properties must not be null");
     }
 
     public static ConfigManager loadDefault() {
@@ -54,12 +55,13 @@ public final class ConfigManager {
     }
 
     public boolean headless() {
-        return Boolean.parseBoolean(resolve("headless", "false"));
+        return parseBooleanStrict(resolve("headless", "false"), "headless");
     }
 
     public int slowMoMs() {
-        return Integer.parseInt(resolve("slowMo",
-                String.valueOf(FrameworkConstants.DEFAULT_SLOW_MO_MS)));
+        return parseNonNegativeInt(
+                resolve("slowMo", String.valueOf(FrameworkConstants.DEFAULT_SLOW_MO_MS)),
+                "slowMo");
     }
 
     // -----------------------------------------------------------------------
@@ -92,7 +94,13 @@ public final class ConfigManager {
     public String baseUrl() {
         String fromSystem = System.getProperty("baseUrl");
         if (StringUtils.isNotBlank(fromSystem)) return fromSystem;
-        return env.getProperty("baseUrl", "");
+
+        String value = env.getProperty("baseUrl", "");
+        if (StringUtils.isBlank(value)) {
+            throw new AutomationException(
+                    "Configuration property 'baseUrl' must not be blank, got: '" + value + "'");
+        }
+        return value;
     }
 
     public String username() {
@@ -112,7 +120,7 @@ public final class ConfigManager {
      * Default: {@code false} — production environments must never ignore cert errors.
      */
     public boolean ignoreHttpsErrors() {
-        return Boolean.parseBoolean(resolve("ignoreHttpsErrors", "false"));
+        return parseBooleanStrict(resolve("ignoreHttpsErrors", "false"), "ignoreHttpsErrors");
     }
 
     /**
@@ -120,7 +128,7 @@ public final class ConfigManager {
      * Default: {@code false}.
      */
     public boolean recordVideo() {
-        return Boolean.parseBoolean(resolve("recordVideo", "false"));
+        return parseBooleanStrict(resolve("recordVideo", "false"), "recordVideo");
     }
 
     /**
@@ -128,7 +136,7 @@ public final class ConfigManager {
      * Default: {@code true}.
      */
     public boolean recordTrace() {
-        return Boolean.parseBoolean(resolve("recordTrace", "true"));
+        return parseBooleanStrict(resolve("recordTrace", "true"), "recordTrace");
     }
 
     // -----------------------------------------------------------------------
@@ -164,7 +172,7 @@ public final class ConfigManager {
             if (value <= 0) {
                 throw new AutomationException(
                         "Configuration property '" + propertyName
-                                + "' must be greater than zero, got: " + value);
+                                + "' must be greater than zero, got: '" + raw + "'");
             }
             return value;
         } catch (NumberFormatException ex) {
@@ -172,5 +180,44 @@ public final class ConfigManager {
                     "Configuration property '" + propertyName
                             + "' is not a valid integer: '" + raw + "'", ex);
         }
+    }
+
+    /**
+     * Parses {@code raw} as a non-negative integer.
+     *
+     * @throws AutomationException if the value is not a valid integer or is < 0
+     */
+    private static int parseNonNegativeInt(String raw, String propertyName) {
+        try {
+            int value = Integer.parseInt(raw.trim());
+            if (value < 0) {
+                throw new AutomationException(
+                        "Configuration property '" + propertyName
+                                + "' must be zero or greater, got: '" + raw + "'");
+            }
+            return value;
+        } catch (NumberFormatException ex) {
+            throw new AutomationException(
+                    "Configuration property '" + propertyName
+                            + "' is not a valid integer: '" + raw + "'", ex);
+        }
+    }
+
+    /**
+     * Parses a strict boolean property that only accepts literal "true" or "false".
+     *
+     * @throws AutomationException if value is anything else
+     */
+    private static boolean parseBooleanStrict(String raw, String propertyName) {
+        String normalized = raw == null ? "" : raw.trim();
+        if ("true".equalsIgnoreCase(normalized)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(normalized)) {
+            return false;
+        }
+        throw new AutomationException(
+                "Configuration property '" + propertyName
+                        + "' must be 'true' or 'false', got: '" + raw + "'");
     }
 }

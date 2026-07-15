@@ -24,8 +24,16 @@ target/artifacts/
 
 # Allure results (regenerated on every run)
 allure-results/
+allure-report/
 target/allure-results/
 target/site/
+
+# Optional root-level artifact directories (for ad-hoc local runs/exports)
+screenshots/
+traces/
+videos/
+downloads/
+logs/
 
 # Environment credentials (never commit!)
 src/test/resources/environments/prod.properties
