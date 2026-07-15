@@ -6,6 +6,7 @@ import com.bjitgroup.utils.ExcelUtils;
 import com.bjitgroup.utils.JsonUtils;
 import com.bjitgroup.utils.RandomDataUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -43,10 +44,7 @@ public final class TestDataManager {
 
     /** Loads a list of users from a JSON array classpath resource. */
     public static List<UserData> usersFromJson(String resourcePath) {
-        return JsonUtils.readList(resourcePath)
-                .stream()
-                .map(map -> JsonUtils.read(resourcePath, UserData.class))
-                .toList();
+        return Arrays.asList(JsonUtils.read(resourcePath, UserData[].class));
     }
 
     // CSV

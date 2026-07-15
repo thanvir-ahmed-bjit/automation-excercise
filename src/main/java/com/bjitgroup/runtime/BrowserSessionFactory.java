@@ -31,28 +31,72 @@ public class BrowserSessionFactory {
     public BrowserSession create() {
         artifactManager.ensureDirectories();
 
-        Playwright playwright = Playwright.create();
-        Browser browser = browserFactory.launch(playwright);
-        BrowserContext context = browser.newContext(new Browser.NewContextOptions()
-                .setBaseURL(config.baseUrl())
-                .setAcceptDownloads(true)
-                .setIgnoreHTTPSErrors(true)
-                .setRecordVideoDir(com.bjitgroup.constants.FrameworkConstants.VIDEO_DIR)
-                .setRecordVideoSize(new RecordVideoSize(1280, 720)));
+        Playwright playwright = null;
+        Browser browser = null;
+        BrowserContext context = null;
 
-        context.onConsoleMessage(msg -> LOG.info("[BROWSER CONSOLE] [{}] {}", msg.type(), msg.text()));
+        try {
+            playwright = Playwright.create();
+            browser = browserFactory.launch(playwright);
+            context = browser.newContext(new Browser.NewContextOptions()
+                    .setBaseURL(config.baseUrl())
+                    .setAcceptDownloads(true)
+                    .setIgnoreHTTPSErrors(true)
+                    .setRecordVideoDir(com.bjitgroup.constants.FrameworkConstants.VIDEO_DIR)
+                    .setRecordVideoSize(new RecordVideoSize(1280, 720)));
 
-        context.tracing().start(new Tracing.StartOptions()
-                .setScreenshots(true)
-                .setSnapshots(true)
-                .setSources(true));
+            context.onConsoleMessage(msg -> LOG.info("[BROWSER CONSOLE] [{}] {}", msg.type(), msg.text()));
 
-        Page page = context.newPage();
+            context.tracing().start(new Tracing.StartOptions()
+                    .setScreenshots(true)
+                    .setSnapshots(true)
+                    .setSources(true));
 
-        LOG.info("Driver initialised browser={} headless={} env={}",
-                config.browser(), config.headless(), config.environment());
+            Page page = context.newPage();
 
-        return new BrowserSession(playwright, browser, context, page, artifactManager, LOG);
+            LOG.info("Driver initialised browser={} headless={} env={}"
+                    , config.browser(), config.headless(), config.environment());
+
+            return new BrowserSession(playwright, browser, context, page, artifactManager, LOG);
+        } catch (RuntimeException ex) {
+            safelyCloseContext(context);
+            safelyCloseBrowser(browser);
+            safelyClosePlaywright(playwright);
+            throw ex;
+        }
+    }
+
+    private void safelyCloseContext(BrowserContext context) {
+        if (context == null) {
+            return;
+        }
+        try {
+            context.close();
+        } catch (Exception closeEx) {
+            LOG.warn("Failed to close browser context during session creation rollback", closeEx);
+        }
+    }
+
+    private void safelyCloseBrowser(Browser browser) {
+        if (browser == null) {
+            return;
+        }
+        try {
+            browser.close();
+        } catch (Exception closeEx) {
+            LOG.warn("Failed to close browser during session creation rollback", closeEx);
+        }
+    }
+
+    private void safelyClosePlaywright(Playwright playwright) {
+        if (playwright == null) {
+            return;
+        }
+        try {
+            playwright.close();
+        } catch (Exception closeEx) {
+            LOG.warn("Failed to close playwright during session creation rollback", closeEx);
+        }
     }
 }
 

@@ -106,7 +106,7 @@ public final class AdminPage {
 
     public AdminPage saveUser() {
         input.click(loc.getProperty("saveButton"));
-        browser.waitForNetworkIdle();
+        browser.waitForVisible(loc.getProperty("successMessage"));
         return this;
     }
 
@@ -172,14 +172,14 @@ public final class AdminPage {
 
     public AdminPage editFirstResult() {
         input.click(loc.getProperty("firstEditButton"));
-        browser.waitForNetworkIdle();
+        browser.waitForVisible(loc.getProperty("saveButton"));
         return this;
     }
 
     public AdminPage deleteFirstResult() {
         input.click(loc.getProperty("firstDeleteButton"));
         input.click(loc.getProperty("confirmDeleteButton"));
-        browser.waitForNetworkIdle();
+        browser.waitForVisible(loc.getProperty("resultTable"));
         return this;
     }
 }

@@ -1,6 +1,8 @@
 package com.bjitgroup.runtime;
 
 import com.bjitgroup.constants.FrameworkConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,6 +11,8 @@ import java.nio.file.Path;
  * Manages framework artifact paths and directories.
  */
 public class ArtifactManager {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ArtifactManager.class);
 
     public void ensureDirectories() {
         for (Path dir : new Path[]{
@@ -19,8 +23,8 @@ public class ArtifactManager {
                 FrameworkConstants.LOG_DIR}) {
             try {
                 Files.createDirectories(dir);
-            } catch (Exception ignored) {
-                // Best effort - tests should continue even if artifact setup partially fails.
+            } catch (Exception ex) {
+                LOG.warn("Failed to create artifact directory: {}", dir.toAbsolutePath(), ex);
             }
         }
     }

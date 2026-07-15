@@ -2,6 +2,7 @@ package com.bjitgroup.actions;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitForSelectorState;
 
@@ -208,12 +209,21 @@ public final class BrowserActions {
     // -------------------------------------------------------------------------
 
     public boolean isVisible(String selector) {
-        waitForState(selector, WaitForSelectorState.VISIBLE);
-        return locator(selector).isVisible();
+        try {
+            waitForState(selector, WaitForSelectorState.VISIBLE);
+            return true;
+        } catch (PlaywrightException ex) {
+            return false;
+        }
     }
 
     public boolean isHidden(String selector) {
-        return locator(selector).isHidden();
+        try {
+            waitForState(selector, WaitForSelectorState.HIDDEN);
+            return true;
+        } catch (PlaywrightException ex) {
+            return false;
+        }
     }
 
     public boolean isEnabled(String selector) {
