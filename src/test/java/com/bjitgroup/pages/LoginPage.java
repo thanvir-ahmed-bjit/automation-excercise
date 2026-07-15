@@ -19,32 +19,26 @@ import static com.bjitgroup.utils.PropertyReader.read;
  * Methods that stay on the same page return {@code this};
  * navigation methods return the target page object.
  */
-public final class LoginPage {
-
-    private final BrowserActions pageActions;
-    private final InputActions inputActions;
-    private final PageManager pages;
+public final class LoginPage extends BasePage {
 
     private final Properties loc =
             read("locators/login-page.properties");
 
     public LoginPage(
-            BrowserActions pageActions,
-            InputActions inputActions,
+            BrowserActions browser,
+            InputActions input,
             PageManager pages
     ) {
-        this.pageActions = pageActions;
-        this.inputActions = inputActions;
-        this.pages = pages;
+        super(browser, input, pages);
     }
 
     public LoginPage open() {
-        pageActions.navigate("/web/index.php/auth/login");
+        browser.navigate("/web/index.php/auth/login");
         return this;
     }
 
     public LoginPage enterUsername(String username) {
-        inputActions.fill(
+        input.fill(
                 loc.getProperty("usernameInput"),
                 username
         );
@@ -52,7 +46,7 @@ public final class LoginPage {
     }
 
     public LoginPage enterPassword(String password) {
-        inputActions.fill(
+        input.fill(
                 loc.getProperty("passwordInput"),
                 password
         );
@@ -60,7 +54,7 @@ public final class LoginPage {
     }
 
     public LoginPage clickLogin() {
-        inputActions.click(
+        input.click(
                 loc.getProperty("loginButton")
         );
         return this;
@@ -74,7 +68,7 @@ public final class LoginPage {
         enterPassword(password);
         clickLogin();
 
-        pageActions.waitForUrlContains("/index.php/");
+        browser.waitForUrlContains("/index.php/");
         return pages.dashboardPage();
     }
 
@@ -85,12 +79,12 @@ public final class LoginPage {
      * yet be rendered.
      */
     public boolean isLoginPageDisplayed() {
-        pageActions.waitForVisible(loc.getProperty("loginButton"));
+        browser.waitForVisible(loc.getProperty("loginButton"));
         return true;
     }
 
     public String getErrorMessage() {
-        return pageActions.textOf(
+        return browser.textOf(
                 loc.getProperty("errorMessage")
         );
     }

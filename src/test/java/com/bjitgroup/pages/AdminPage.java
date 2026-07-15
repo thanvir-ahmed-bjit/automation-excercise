@@ -12,11 +12,8 @@ import static com.bjitgroup.utils.PropertyReader.read;
 /**
  * OrangeHRM Admin page.
  */
-public final class AdminPage {
+public final class AdminPage extends BasePage {
 
-    private final BrowserActions browser;
-    private final InputActions input;
-    private final PageManager pages;
     private final Properties loc =
             read("locators/admin-page.properties");
 
@@ -25,9 +22,7 @@ public final class AdminPage {
             InputActions input,
             PageManager pages
     ) {
-        this.browser = browser;
-        this.input = input;
-        this.pages = pages;
+        super(browser, input, pages);
     }
 
     public AdminPage open() {

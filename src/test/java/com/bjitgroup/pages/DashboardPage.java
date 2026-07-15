@@ -11,11 +11,8 @@ import static com.bjitgroup.utils.PropertyReader.read;
 /**
  * OrangeHRM Dashboard page.
  */
-public final class DashboardPage {
+public final class DashboardPage extends BasePage {
 
-    private final BrowserActions browser;
-    private final InputActions input;
-    private final PageManager pages;
     private final Properties loc =
             read("locators/dashboard-page.properties");
 
@@ -24,9 +21,7 @@ public final class DashboardPage {
             InputActions input,
             PageManager pages
     ) {
-        this.browser = browser;
-        this.input = input;
-        this.pages = pages;
+        super(browser, input, pages);
     }
 
     /**
