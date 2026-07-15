@@ -37,6 +37,10 @@ public class ArtifactManager {
         return FrameworkConstants.TRACE_DIR.resolve(safeName(fileNameWithoutExtension) + ".zip");
     }
 
+    public Path videoPath(String fileNameWithoutExtension) {
+        return FrameworkConstants.VIDEO_DIR.resolve(safeName(fileNameWithoutExtension) + ".webm");
+    }
+
     private String safeName(String value) {
         return value.replaceAll("[^A-Za-z0-9._-]", "_");
     }

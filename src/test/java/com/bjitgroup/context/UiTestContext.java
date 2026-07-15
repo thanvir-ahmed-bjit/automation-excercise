@@ -59,6 +59,7 @@ public class UiTestContext {
      * @return the path to the saved screenshot
      */
     public Path captureScreenshot(String screenshotName) {
+        artifactManager.ensureDirectories();
         Path screenshotPath = artifactManager.screenshotPath(screenshotName);
         page().screenshot(new Page.ScreenshotOptions().setPath(screenshotPath).setFullPage(true));
         return screenshotPath;

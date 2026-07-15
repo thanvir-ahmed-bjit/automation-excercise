@@ -76,7 +76,7 @@ public class BrowserSession {
             return;
         }
         stopTracingSafely(executionName);
-        closeContextSafely();
+        saveVideoSafely(executionName);
         closeBrowserSafely();
         closePlaywrightSafely();
     }
@@ -87,24 +87,38 @@ public class BrowserSession {
 
     private void stopTracingSafely(String executionName) {
         if (!tracingEnabled) {
+            logger.info("Trace disabled");
             return;
         }
         try {
+            var tracePath = artifactManager.tracePath(executionName);
             context.tracing().stop(
-                    new Tracing.StopOptions().setPath(artifactManager.tracePath(executionName))
+                    new Tracing.StopOptions().setPath(tracePath)
             );
+            logger.info("Trace saved: {}", tracePath.toAbsolutePath());
         } catch (Exception ex) {
             logger.warn("Error stopping tracing for '{}'", executionName, ex);
         }
     }
 
-    private void closeContextSafely() {
-        try {
-            context.close();
-        } catch (Exception ex) {
-            logger.warn("Error closing browser context", ex);
-        }
-    }
+     private void saveVideoSafely(String executionName) {
+         try {
+             // Capture video reference before closing context
+             com.microsoft.playwright.Video video = page.video();
+
+             // Close context — this finalizes the video file
+             context.close();
+
+             // Save the video with meaningful name if it was being recorded
+             if (video != null) {
+                 var videoPath = artifactManager.videoPath(executionName);
+                 video.saveAs(videoPath);
+                 logger.info("Video saved: {}", videoPath.toAbsolutePath());
+             }
+         } catch (Exception ex) {
+             logger.warn("Error saving video for '{}'", executionName, ex);
+         }
+     }
 
     private void closeBrowserSafely() {
         try {

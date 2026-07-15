@@ -162,11 +162,13 @@ public class TestListener implements ITestListener, IInvokedMethodListener {
 
         if (result.isSuccess()) {
             LOG.info("OK TEST PASSED   : {}", qualifiedName(result));
+            LOG.info("Screenshot skipped: {}", qualifiedName(result));
         } else if (result.getStatus() == ITestResult.FAILURE) {
             LOG.error("XX TEST FAILED   : {}", qualifiedName(result));
             attachFailureScreenshot(result);
         } else if (result.getStatus() == ITestResult.SKIP) {
             LOG.warn("-- TEST SKIPPED  : {}", qualifiedName(result));
+            LOG.info("Screenshot skipped: {}", qualifiedName(result));
         }
 
         closeSession(result);
@@ -192,10 +194,12 @@ public class TestListener implements ITestListener, IInvokedMethodListener {
         try {
             UiTestContext context = contextFrom(result);
             if (context == null) {
+                LOG.info("Screenshot skipped: {}", qualifiedName(result));
                 return;
             }
-            String screenshotName = executionNameFrom(result) + "_FAIL";
+            String screenshotName = executionNameFrom(result);
             var shot = context.captureScreenshot(screenshotName);
+            LOG.info("Screenshot captured: {}", shot.toAbsolutePath());
             AllureManager.attachScreenshot("Failure Screenshot", shot);
         } catch (Exception ex) {
             LOG.warn("Could not capture failure screenshot for '{}'",
