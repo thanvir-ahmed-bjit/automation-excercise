@@ -34,6 +34,21 @@ public final class LoginPage extends BasePage {
 
     public LoginPage open() {
         browser.navigate("/web/index.php/auth/login");
+        return waitUntilLoaded();
+    }
+
+    /**
+     * Waits until the login page readiness element is visible.
+     *
+     * <p>Throws a Playwright timeout error when the page does not become ready
+     * within the configured timeout.</p>
+     *
+     * @return this login page
+     */
+    public LoginPage waitUntilLoaded() {
+        browser.waitForVisible(
+                loc.getProperty("loginButton")
+        );
         return this;
     }
 
@@ -68,19 +83,26 @@ public final class LoginPage extends BasePage {
         enterPassword(password);
         clickLogin();
 
-        browser.waitForUrlContains("/index.php/");
-        return pages.dashboardPage();
+        return pages.dashboardPage().waitUntilLoaded();
     }
 
     /**
-     * Returns {@code true} once the login button is visible, waiting up to the
-     * configured timeout.  Uses {@link BrowserActions#waitForVisible} because
-     * this method is called immediately after navigation and the button may not
-     * yet be rendered.
+     * Returns whether the login page readiness element is currently visible.
+     *
+     * <p>This is an immediate state query and does not wait. Call
+     * {@link #waitUntilLoaded()} when synchronization is required.</p>
+     *
+     * @return {@code true} when the login button is visible now; otherwise {@code false}
      */
+    public boolean isLoaded() {
+        return browser.isVisible(
+                loc.getProperty("loginButton")
+        );
+    }
+
+    /** Backward-compatible alias for existing tests. */
     public boolean isLoginPageDisplayed() {
-        browser.waitForVisible(loc.getProperty("loginButton"));
-        return true;
+        return isLoaded();
     }
 
     public String getErrorMessage() {

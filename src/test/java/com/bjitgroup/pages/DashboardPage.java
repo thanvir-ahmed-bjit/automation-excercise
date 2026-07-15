@@ -25,28 +25,43 @@ public final class DashboardPage extends BasePage {
     }
 
     /**
-     * Returns {@code true} once the dashboard header is visible, waiting up to the
-     * configured timeout.  Uses {@link BrowserActions#waitForVisible} rather than
-     * an instant snapshot because this method is called immediately after navigation
-     * and the header may not yet be in the DOM.
+     * Waits until the dashboard readiness element is visible.
+     *
+     * <p>Throws a Playwright timeout error when the page does not become ready
+     * within the configured timeout.</p>
+     *
+     * @return this dashboard page
+     */
+    public DashboardPage waitUntilLoaded() {
+        browser.waitForVisible(
+                loc.getProperty("dashboardHeader")
+        );
+        return this;
+    }
+
+    /**
+     * Returns whether the dashboard readiness element is currently visible.
+     *
+     * <p>This is an immediate state query and does not wait. Call
+     * {@link #waitUntilLoaded()} when synchronization is required.</p>
+     *
+     * @return {@code true} when the dashboard header is visible now; otherwise {@code false}
      */
     public boolean isLoaded() {
-        browser.waitForVisible(loc.getProperty("dashboardHeader"));
-        return true;
+        return browser.isVisible(
+                loc.getProperty("dashboardHeader")
+        );
     }
 
     public LoginPage logout() {
         input.click(loc.getProperty("userDropdown"));
         input.click(loc.getProperty("logoutLink"));
 
-        browser.waitForUrlContains("/auth/login");
-        browser.waitForDomContentLoaded();
-
-        return pages.loginPage();
+        return pages.loginPage().waitUntilLoaded();
     }
 
     public AdminPage goToAdmin() {
         input.click(loc.getProperty("adminMenuLink"));
-        return pages.adminPage();
+        return pages.adminPage().waitUntilLoaded();
     }
 }

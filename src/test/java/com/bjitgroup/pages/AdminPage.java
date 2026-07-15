@@ -7,6 +7,7 @@ import com.bjitgroup.models.UserData;
 
 import java.util.Properties;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static com.bjitgroup.utils.PropertyReader.read;
 
 /**
@@ -27,7 +28,21 @@ public final class AdminPage extends BasePage {
 
     public AdminPage open() {
         browser.navigate("/web/index.php/admin/viewSystemUsers");
-        browser.waitForVisible(loc.getProperty("searchUsernameInput"));
+        return waitUntilLoaded();
+    }
+
+    /**
+     * Waits until the admin page readiness element is visible.
+     *
+     * <p>Throws a Playwright timeout error when the page does not become ready
+     * within the configured timeout.</p>
+     *
+     * @return this admin page
+     */
+    public AdminPage waitUntilLoaded() {
+        browser.waitForVisible(
+                loc.getProperty("adminHeader")
+        );
         return this;
     }
 
@@ -38,6 +53,14 @@ public final class AdminPage extends BasePage {
         return open();
     }
 
+    /**
+     * Returns whether the admin page readiness element is currently visible.
+     *
+     * <p>This is an immediate state query and does not wait. Call
+     * {@link #waitUntilLoaded()} when synchronization is required.</p>
+     *
+     * @return {@code true} when the admin header is visible now; otherwise {@code false}
+     */
     public boolean isLoaded() {
         return browser.isVisible(
                 loc.getProperty("adminHeader")
@@ -117,6 +140,7 @@ public final class AdminPage extends BasePage {
 
     public AdminPage resetSearch() {
         input.click(loc.getProperty("resetButton"));
+        assertThat(browser.locator(loc.getProperty("searchUsernameInput"))).hasValue("");
         return this;
     }
 
@@ -162,7 +186,7 @@ public final class AdminPage extends BasePage {
 
     public DashboardPage returnToDashboard() {
         input.click(loc.getProperty("dashboardMenuLink"));
-        return pages.dashboardPage();
+        return pages.dashboardPage().waitUntilLoaded();
     }
 
     public AdminPage editFirstResult() {
@@ -172,9 +196,15 @@ public final class AdminPage extends BasePage {
     }
 
     public AdminPage deleteFirstResult() {
+        // A previous toast can still be visible; ensure the next success wait reflects this delete action.
+        browser.waitForHidden(loc.getProperty("successMessage"));
+
         input.click(loc.getProperty("firstDeleteButton"));
         input.click(loc.getProperty("confirmDeleteButton"));
-        browser.waitForVisible(loc.getProperty("resultTable"));
+
+        browser.waitForVisible(loc.getProperty("successMessage"));
+        browser.waitForHidden(loc.getProperty("confirmDeleteButton"));
+
         return this;
     }
 }

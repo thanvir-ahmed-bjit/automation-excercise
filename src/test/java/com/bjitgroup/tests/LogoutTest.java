@@ -31,13 +31,13 @@ public class LogoutTest extends BaseTest {
         LoginPage loginPage = pages().loginPage();
 
         Allure.step("Open Login page", loginPage::open);
-        Allure.step("Enter username", () ->
-                loginPage.enterUsername(context().config().username()));
-        Allure.step("Enter password", () ->
-                loginPage.enterPassword(context().config().password()));
-        Allure.step("Click Login button", loginPage::clickLogin);
-
-        DashboardPage dashboard = pages().dashboardPage();
+        DashboardPage dashboard = Allure.step(
+                "Login with valid credentials",
+                () -> loginPage.loginAs(
+                        context().config().username(),
+                        context().config().password()
+                )
+        );
 
         Allure.step("Verify Dashboard page is loaded", () ->
                 Assertions.assertThat(dashboard.isLoaded())
