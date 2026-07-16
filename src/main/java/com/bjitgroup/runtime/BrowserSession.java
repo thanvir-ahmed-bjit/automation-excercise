@@ -113,6 +113,7 @@ public class BrowserSession {
              if (video != null) {
                  var videoPath = artifactManager.videoPath(executionName);
                  video.saveAs(videoPath);
+                 video.delete();
                  logger.info("Video saved: {}", videoPath.toAbsolutePath());
              }
          } catch (Exception ex) {
