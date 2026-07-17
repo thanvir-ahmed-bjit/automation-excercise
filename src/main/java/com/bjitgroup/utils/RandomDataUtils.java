@@ -1,7 +1,10 @@
 package com.bjitgroup.utils;
 
 import com.github.javafaker.Faker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -9,8 +12,17 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class RandomDataUtils {
 
-    private static final ThreadLocal<Faker> FAKER = ThreadLocal.withInitial(Faker::new);
-    private static final AtomicLong UNIQUE = new AtomicLong(System.currentTimeMillis());
+    private static final Logger LOG = LoggerFactory.getLogger(RandomDataUtils.class);
+    private static final String TEST_DATA_SEED_PROPERTY = "testDataSeed";
+    private static final Long CONFIGURED_SEED = readConfiguredSeed();
+    private static final ThreadLocal<Faker> FAKER = ThreadLocal.withInitial(RandomDataUtils::createFaker);
+    private static final AtomicLong UNIQUE = new AtomicLong(initialUniqueValue());
+
+    static {
+        if (CONFIGURED_SEED != null) {
+            LOG.info("Test-data generation seed: {}", CONFIGURED_SEED);
+        }
+    }
 
     private RandomDataUtils() { /* utility */ }
 
@@ -40,6 +52,31 @@ public final class RandomDataUtils {
 
     private static Faker faker() {
         return FAKER.get();
+    }
+
+    private static Faker createFaker() {
+        if (CONFIGURED_SEED != null) {
+            return new Faker(new Random(CONFIGURED_SEED));
+        }
+        return new Faker();
+    }
+
+    private static long initialUniqueValue() {
+        return CONFIGURED_SEED != null ? CONFIGURED_SEED : System.currentTimeMillis();
+    }
+
+    private static Long readConfiguredSeed() {
+        String rawSeed = System.getProperty(TEST_DATA_SEED_PROPERTY);
+        if (rawSeed == null || rawSeed.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(rawSeed.trim());
+        } catch (NumberFormatException ex) {
+            LOG.warn("Ignoring invalid '{}' value '{}'; falling back to non-deterministic mode",
+                    TEST_DATA_SEED_PROPERTY, rawSeed);
+            return null;
+        }
     }
 
     private static long uniqueSuffix() {

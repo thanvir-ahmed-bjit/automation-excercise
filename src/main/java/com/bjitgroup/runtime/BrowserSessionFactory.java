@@ -84,6 +84,7 @@ public class BrowserSessionFactory {
             // Start tracing only when configured — BrowserSession records this
             // flag so it can skip stopTracing() when tracing was never started.
             boolean traceEnabled = config.recordTrace();
+            boolean videoEnabled = config.recordVideo();
             if (traceEnabled) {
                 context.tracing().start(new Tracing.StartOptions()
                         .setScreenshots(true)
@@ -95,10 +96,10 @@ public class BrowserSessionFactory {
 
             LOG.info("Session created  browser={}  headless={}  env={}  trace={}  video={}",
                     config.browser(), config.headless(), config.environment(),
-                    traceEnabled, config.recordVideo());
+                    traceEnabled, videoEnabled);
 
             return new BrowserSession(playwright, browser, context, page,
-                    artifactManager, LOG, traceEnabled);
+                    artifactManager, LOG, traceEnabled, videoEnabled);
 
         } catch (RuntimeException ex) {
             // Roll back in reverse creation order

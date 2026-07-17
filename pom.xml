@@ -31,6 +31,9 @@
         <logback.version>1.5.12</logback.version>
         <javafaker.version>1.0.2</javafaker.version>
         <owner.version>1.0.12</owner.version>
+        <jakarta.validation.version>3.1.0</jakarta.validation.version>
+        <hibernate.validator.version>8.0.1.Final</hibernate.validator.version>
+        <jakarta.el.version>4.0.2</jakarta.el.version>
 
         <!-- Plugin versions -->
         <surefire.version>3.5.2</surefire.version>
@@ -115,6 +118,26 @@
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
             <version>${javafaker.version}</version>
+        </dependency>
+
+        <!-- ===== VALIDATION ===== -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${jakarta.validation.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>${hibernate.validator.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.el</artifactId>
+            <version>${jakarta.el.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- ===== LOGGING ===== -->

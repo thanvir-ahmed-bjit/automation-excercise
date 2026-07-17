@@ -37,15 +37,7 @@ public class UserDataProvider {
     public static Object[][] usersFromCsv() {
         return TestDataManager.usersFromCsv("testdata/users.csv")
                 .stream()
-                .map(row -> new Object[]{
-                        new UserData(
-                                row.get("username"),
-                                row.get("firstName"),
-                                row.get("lastName"),
-                                row.get("email"),
-                                row.getOrDefault("status", "Enabled"),
-                                row.getOrDefault("role", "ESS"))
-                })
+                .map(row -> new Object[]{TestDataManager.userFromMap(row)})
                 .toArray(Object[][]::new);
     }
 }

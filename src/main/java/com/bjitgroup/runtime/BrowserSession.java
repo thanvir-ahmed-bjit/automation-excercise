@@ -29,6 +29,8 @@ public class BrowserSession {
     private final Logger logger;
     /** Whether tracing was started during session creation. */
     private final boolean tracingEnabled;
+    /** Whether video recording was enabled during session creation. */
+    private final boolean videoEnabled;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public BrowserSession(
@@ -38,7 +40,8 @@ public class BrowserSession {
             Page page,
             ArtifactManager artifactManager,
             Logger logger,
-            boolean tracingEnabled
+            boolean tracingEnabled,
+            boolean videoEnabled
     ) {
         this.playwright      = Objects.requireNonNull(playwright,      "Playwright must not be null");
         this.browser         = Objects.requireNonNull(browser,         "Browser must not be null");
@@ -47,6 +50,7 @@ public class BrowserSession {
         this.artifactManager = Objects.requireNonNull(artifactManager, "ArtifactManager must not be null");
         this.logger          = Objects.requireNonNull(logger,          "Logger must not be null");
         this.tracingEnabled  = tracingEnabled;
+        this.videoEnabled    = videoEnabled;
     }
 
     public Page page() {
@@ -101,25 +105,36 @@ public class BrowserSession {
         }
     }
 
-     private void saveVideoSafely(String executionName) {
-         try {
-             // Capture video reference before closing context
-             com.microsoft.playwright.Video video = page.video();
+    private void saveVideoSafely(String executionName) {
+        com.microsoft.playwright.Video video = null;
 
-             // Close context — this finalizes the video file
-             context.close();
+        if (videoEnabled) {
+            try {
+                // Capture video reference before closing context.
+                video = page.video();
+            } catch (Exception ex) {
+                logger.warn("Error saving video for '{}'", executionName, ex);
+            }
+        }
 
-             // Save the video with meaningful name if it was being recorded
-             if (video != null) {
-                 var videoPath = artifactManager.videoPath(executionName);
-                 video.saveAs(videoPath);
-                 video.delete();
-                 logger.info("Video saved: {}", videoPath.toAbsolutePath());
-             }
-         } catch (Exception ex) {
-             logger.warn("Error saving video for '{}'", executionName, ex);
-         }
-     }
+        try {
+            // Context must always close, regardless of video retrieval outcome.
+            context.close();
+        } catch (Exception ex) {
+            logger.warn("Error closing browser context", ex);
+        }
+
+        if (videoEnabled && video != null) {
+            try {
+                var videoPath = artifactManager.videoPath(executionName);
+                video.saveAs(videoPath);
+                video.delete();
+                logger.info("Video saved: {}", videoPath.toAbsolutePath());
+            } catch (Exception ex) {
+                logger.warn("Error saving video for '{}'", executionName, ex);
+            }
+        }
+    }
 
     private void closeBrowserSafely() {
         try {

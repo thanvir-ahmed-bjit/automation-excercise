@@ -25,26 +25,40 @@ public final class TestDataManager {
 
     /** Creates a fully-randomised {@link UserData} object. */
     public static UserData randomUser() {
-        return new UserData(
+        return TestDataValidator.validate(new UserData(
                 RandomDataUtils.username(),
                 RandomDataUtils.firstName(),
                 RandomDataUtils.lastName(),
                 RandomDataUtils.email(),
                 "Enabled",
                 "ESS"
-        );
+        ));
     }
 
     // JSON
 
     /** Loads a single {@link UserData} from a JSON classpath resource. */
     public static UserData userFromJson(String resourcePath) {
-        return JsonUtils.read(resourcePath, UserData.class);
+        return TestDataValidator.validate(JsonUtils.read(resourcePath, UserData.class));
     }
 
     /** Loads a list of users from a JSON array classpath resource. */
     public static List<UserData> usersFromJson(String resourcePath) {
-        return Arrays.asList(JsonUtils.read(resourcePath, UserData[].class));
+        return Arrays.stream(JsonUtils.read(resourcePath, UserData[].class))
+                .map(TestDataValidator::validate)
+                .toList();
+    }
+
+    /** Builds and validates a {@link UserData} object from a raw row map. */
+    public static UserData userFromMap(Map<String, String> row) {
+        return TestDataValidator.validate(new UserData(
+                row.get("username"),
+                row.get("firstName"),
+                row.get("lastName"),
+                row.get("email"),
+                row.getOrDefault("status", "Enabled"),
+                row.getOrDefault("role", "ESS")
+        ));
     }
 
     // CSV
