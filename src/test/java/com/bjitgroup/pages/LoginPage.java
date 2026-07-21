@@ -1,7 +1,7 @@
 package com.bjitgroup.pages;
 
-import com.bjitgroup.actions.InputActions;
 import com.bjitgroup.actions.BrowserActions;
+import com.bjitgroup.actions.InputActions;
 import com.bjitgroup.context.PageManager;
 
 import java.util.Properties;
@@ -9,20 +9,13 @@ import java.util.Properties;
 import static com.bjitgroup.utils.PropertyReader.read;
 
 /**
- * Login page for OrangeHRM.
- *
- * <h3>Locators</h3>
- * All CSS/XPath selectors are externalised in
- * {@code src/test/resources/locators/login-page.properties}.
- *
- * <h3>Fluent interface</h3>
- * Methods that stay on the same page return {@code this};
- * navigation methods return the target page object.
+ * Signup / Login page for Automation Exercise.
  */
 public final class LoginPage extends BasePage {
 
-    private final Properties loc =
-            read("locators/login-page.properties");
+    private static final String PATH = "https://automationexercise.com/login";
+
+    private final Properties loc = read("locators/login-page.properties");
 
     public LoginPage(
             BrowserActions browser,
@@ -33,81 +26,93 @@ public final class LoginPage extends BasePage {
     }
 
     public LoginPage open() {
-        browser.navigate("/web/index.php/auth/login");
+        browser.navigate(PATH);
         return waitUntilLoaded();
     }
 
-    /**
-     * Waits until the login page readiness element is visible.
-     *
-     * <p>Throws a Playwright timeout error when the page does not become ready
-     * within the configured timeout.</p>
-     *
-     * @return this login page
-     */
     public LoginPage waitUntilLoaded() {
-        browser.waitForVisible(
-                loc.getProperty("loginButton")
-        );
+        browser.waitForVisible(loc.getProperty("emailInput"));
+        browser.waitForVisible(loc.getProperty("signupNameInput"));
+        return this;
+    }
+
+    public LoginPage enterEmail(String email) {
+        input.fill(loc.getProperty("emailInput"), email);
         return this;
     }
 
     public LoginPage enterUsername(String username) {
-        input.fill(
-                loc.getProperty("usernameInput"),
-                username
-        );
-        return this;
+        return enterEmail(username);
     }
 
     public LoginPage enterPassword(String password) {
-        input.fill(
-                loc.getProperty("passwordInput"),
-                password
-        );
+        input.fill(loc.getProperty("passwordInput"), password);
         return this;
     }
 
     public LoginPage clickLogin() {
-        input.click(
-                loc.getProperty("loginButton")
-        );
+        input.click(loc.getProperty("loginButton"));
         return this;
     }
 
-    public DashboardPage loginAs(
-            String username,
-            String password
-    ) {
-        enterUsername(username);
-        enterPassword(password);
-        clickLogin();
-
-        return pages.dashboardPage().waitUntilLoaded();
+    public DashboardPage loginAs(String email, String password) {
+        attemptLogin(email, password);
+        return pages.dashboardPage();
     }
 
-    /**
-     * Returns whether the login page readiness element is currently visible.
-     *
-     * <p>This is an immediate state query and does not wait. Call
-     * {@link #waitUntilLoaded()} when synchronization is required.</p>
-     *
-     * @return {@code true} when the login button is visible now; otherwise {@code false}
-     */
+    public LoginPage attemptLogin(String email, String password) {
+        return enterEmail(email)
+                .enterPassword(password)
+                .clickLogin();
+    }
+
+    public LoginPage enterSignupName(String name) {
+        input.fill(loc.getProperty("signupNameInput"), name);
+        return this;
+    }
+
+    public LoginPage enterSignupEmail(String email) {
+        input.fill(loc.getProperty("signupEmailInput"), email);
+        return this;
+    }
+
+    public SignupPage clickSignup() {
+        input.click(loc.getProperty("signupButton"));
+        return pages.signupPage().waitUntilLoaded();
+    }
+
+    public LoginPage clickSignupExpectingError() {
+        input.click(loc.getProperty("signupButton"));
+        return this;
+    }
+
+    public SignupPage startSignup(String name, String email) {
+        return enterSignupName(name)
+                .enterSignupEmail(email)
+                .clickSignup();
+    }
+
+    public String getSignupErrorMessage() {
+        String selector = loc.getProperty("signupErrorMessage");
+        browser.waitForVisible(selector);
+        return browser.textOf(selector);
+    }
+
+    public boolean isSignupFormVisible() {
+        return browser.isVisible(loc.getProperty("signupFormHeading"));
+    }
+
     public boolean isLoaded() {
-        return browser.isVisible(
-                loc.getProperty("loginButton")
-        );
+        return browser.isVisible(loc.getProperty("loginFormHeading"));
     }
 
-    /** Backward-compatible alias for existing tests. */
     public boolean isLoginPageDisplayed() {
         return isLoaded();
     }
 
     public String getErrorMessage() {
-        return browser.textOf(
-                loc.getProperty("errorMessage")
-        );
+        String selector = loc.getProperty("errorMessage");
+        browser.waitForVisible(selector);
+        return browser.textOf(selector);
     }
 }

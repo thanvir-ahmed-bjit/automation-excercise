@@ -7,22 +7,18 @@
   thread-count: 3 (adjust for CI runner capacity)
 -->
 <suite name="Playwright UI Automation Suite"
-       parallel="classes"
-       thread-count="3"
-       data-provider-thread-count="2"
+       parallel="none"
+       thread-count="1"
+       data-provider-thread-count="1"
        verbose="1">
 
 
-    <!-- Smoke / Authentication -->
-    <test name="Login Tests">
+    <test name="Automation Exercise End-to-End">
         <classes>
-            <class name="com.bjitgroup.tests.LoginTest"/>
-        </classes>
-    </test>
-
-    <test name="Logout Tests">
-        <classes>
-            <class name="com.bjitgroup.tests.LogoutTest"/>
+            <class name="com.bjitgroup.tests.SignupTest"/>
+            <class name="com.bjitgroup.tests.ProductPage"/>
+            <class name="com.bjitgroup.tests.PurchaseProduct"/>
+            <class name="com.bjitgroup.tests.DeleteUser"/>
         </classes>
     </test>
 

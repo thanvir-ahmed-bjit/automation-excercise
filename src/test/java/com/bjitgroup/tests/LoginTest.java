@@ -51,26 +51,33 @@ public class LoginTest extends BaseTest {
 
     @Test(
             priority = 2,
-            description = "Invalid credentials should show an error message",
+            description = "Login User with incorrect email and password",
             retryAnalyzer = RetryAnalyzer.class
     )
     @Severity(SeverityLevel.CRITICAL)
     @Story("Invalid Login")
-    @Description("Enter incorrect credentials and verify the error banner appears.")
+    @Description("Launch app, open signup/login, submit invalid credentials, and verify incorrect-login error.")
     public void invalidCredentialsShouldShowError() {
-
         LoginPage loginPage = pages().loginPage();
 
-        Allure.step("Open Login page", loginPage::open);
-        Allure.step("Enter username", () ->
-                loginPage.enterUsername("wrong.user@x.com"));
-        Allure.step("Enter password", () ->
-                loginPage.enterPassword("WrongPassword999!"));
-        Allure.step("Click Login button", loginPage::clickLogin);
+        Allure.step("Navigate to home page", () ->
+                page().navigate("http://automationexercise.com"));
+        Allure.step("Verify home page is visible", () ->
+                Assertions.assertThat(page().locator("img[alt='Website for automation practice']").isVisible())
+                        .as("Home page logo should be visible")
+                        .isTrue());
+        Allure.step("Click Signup / Login", () ->
+                page().locator("a[href='/login']").first().click());
+        Allure.step("Verify Login to your account is visible", () ->
+                Assertions.assertThat(loginPage.waitUntilLoaded().isLoginPageDisplayed())
+                        .as("Login form should be visible")
+                        .isTrue());
+        Allure.step("Enter incorrect email and password", () ->
+                loginPage.attemptLogin("wrong.user@x.com", "WrongPassword999!"));
         Allure.step("Verify error message is displayed", () ->
                 Assertions.assertThat(loginPage.getErrorMessage())
-                        .as("Error message should be displayed for invalid credentials")
-                        .containsIgnoringCase("Invalid credentials"));
+                        .as("Incorrect email/password message should be shown")
+                        .contains("Your email or password is incorrect!"));
     }
 
     @Test(
