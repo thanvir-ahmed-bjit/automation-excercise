@@ -3,6 +3,7 @@ package com.bjitgroup.context;
 import com.bjitgroup.actions.BrowserActions;
 import com.bjitgroup.actions.InputActions;
 import com.bjitgroup.pages.AdminPage;
+import com.bjitgroup.pages.ContactUsPage;
 import com.bjitgroup.pages.DashboardPage;
 import com.bjitgroup.pages.LoginPage;
 import com.bjitgroup.pages.SignupPage;
@@ -27,6 +28,7 @@ public final class PageManager {
     private DashboardPage dashboardPage;
     private AdminPage adminPage;
     private SignupPage signupPage;
+    private ContactUsPage contactUsPage;
 
     public PageManager(Page page, int timeoutMs) {
         Objects.requireNonNull(page, "Page must not be null");
@@ -64,5 +66,12 @@ public final class PageManager {
             signupPage = new SignupPage(browserActions, inputActions, this);
         }
         return signupPage;
+    }
+
+    public ContactUsPage contactUsPage() {
+        if (contactUsPage == null) {
+            contactUsPage = new ContactUsPage(browserActions, inputActions, this);
+        }
+        return contactUsPage;
     }
 }

@@ -4,6 +4,7 @@ import com.bjitgroup.base.BaseTest;
 import com.bjitgroup.listeners.RetryAnalyzer;
 import com.bjitgroup.pages.DashboardPage;
 import com.bjitgroup.pages.LoginPage;
+import com.bjitgroup.utils.AccountHelper;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -47,6 +48,37 @@ public class LoginTest extends BaseTest {
                 Assertions.assertThat(dashboard.isLoaded())
                         .as("Dashboard should be visible after successful login")
                         .isTrue());
+    }
+
+    @Test(
+            description = "Login User with correct email and password",
+            retryAnalyzer = RetryAnalyzer.class
+    )
+    @Severity(SeverityLevel.BLOCKER)
+    @Story("Valid Login - AutomationExercise")
+    @Description("Create account, navigate to home, login with correct credentials, verify logged in, delete account.")
+    public void loginWithCorrectCredentialsShouldSucceed() {
+        String[] account = AccountHelper.createAccount(page());
+        String email = account[1];
+        String password = account[2];
+
+        page().navigate("http://automationexercise.com");
+        Assertions.assertThat(page().locator("img[alt='Website for automation practice']").isVisible())
+            .as("Home page should be visible").isTrue();
+
+        page().locator("a[href='/login']").first().click();
+        Assertions.assertThat(pages().loginPage().waitUntilLoaded().isLoginPageDisplayed())
+            .as("Login to your account should be visible").isTrue();
+
+        pages().loginPage().attemptLogin(email, password);
+        page().waitForSelector("//a[contains(normalize-space(),'Logged in as')]");
+        Assertions.assertThat(page().locator("//a[contains(normalize-space(),'Logged in as')]").isVisible())
+            .as("User should be logged in").isTrue();
+
+        page().locator("a[href='/delete_account']").first().click();
+        page().waitForSelector("//b[normalize-space()='Account Deleted!']");
+        Assertions.assertThat(page().locator("//b[normalize-space()='Account Deleted!']").innerText())
+            .isEqualTo("ACCOUNT DELETED!");
     }
 
     @Test(

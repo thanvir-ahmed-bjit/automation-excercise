@@ -1,62 +1,38 @@
 package com.bjitgroup.tests;
 
 import com.bjitgroup.base.BaseTest;
-import com.bjitgroup.listeners.RetryAnalyzer;
-import com.bjitgroup.pages.DashboardPage;
-import com.bjitgroup.pages.LoginPage;
+import com.bjitgroup.utils.AccountHelper;
 import io.qameta.allure.*;
-import io.qameta.allure.Description;
-import io.qameta.allure.Feature;
-import io.qameta.allure.Severity;
-import io.qameta.allure.SeverityLevel;
-import io.qameta.allure.Story;
 import org.assertj.core.api.Assertions;
 import org.testng.annotations.Test;
 
-/**
- * <p>Listeners are declared once on {@link com.bjitgroup.base.BaseTest}.</p>
- */
 @Feature("Authentication")
 public class LogoutTest extends BaseTest {
 
-    @Test(
-            description = "Authenticated user should be able to log out",
-            retryAnalyzer = RetryAnalyzer.class
-    )
+    @Test(description = "Logout User should navigate to login page")
     @Severity(SeverityLevel.CRITICAL)
     @Story("Logout")
-    @Description("Login with valid credentials, click Logout, and verify redirect to Login page.")
-    public void loggedInUserShouldLogoutSuccessfully() {
+    @Description("Create account, login, verify logged in, logout, verify navigated to login page.")
+    public void logoutUserShouldNavigateToLoginPage() {
+        String[] account = AccountHelper.createAccount(page());
+        String email = account[1];
+        String password = account[2];
 
-        LoginPage loginPage = pages().loginPage();
+        page().navigate("https://automationexercise.com");
+        Assertions.assertThat(page().locator("img[alt='Website for automation practice']").isVisible())
+            .as("Home page should be visible").isTrue();
 
-        Allure.step("Open Login page", loginPage::open);
-        DashboardPage dashboard = Allure.step(
-                "Login with valid credentials",
-                () -> loginPage.loginAs(
-                        context().config().username(),
-                        context().config().password()
-                )
-        );
+        page().locator("a[href='/login']").first().click();
+        Assertions.assertThat(pages().loginPage().waitUntilLoaded().isLoginPageDisplayed())
+            .as("Login to your account should be visible").isTrue();
 
-        Allure.step("Verify Dashboard page is loaded", () ->
-                Assertions.assertThat(dashboard.isLoaded())
-                        .as("Pre-condition: dashboard must be visible")
-                        .isTrue());
+        pages().loginPage().attemptLogin(email, password);
+        page().waitForSelector("//a[contains(normalize-space(),'Logged in as')]");
+        Assertions.assertThat(page().locator("//a[contains(normalize-space(),'Logged in as')]").isVisible())
+            .as("User should be logged in").isTrue();
 
-        LoginPage loginPageAfterLogout = Allure.step(
-                "Logout from application",
-                dashboard::logout
-        );
-
-        Allure.step("Verify Login page is displayed after logout", () ->
-                Assertions.assertThat(loginPageAfterLogout.isLoginPageDisplayed())
-                        .as("Login page should be displayed after logout")
-                        .isTrue());
-
-        Allure.step("Verify URL redirects to Login page", () ->
-                Assertions.assertThat(page().url())
-                        .as("URL should redirect back to the login page")
-                        .contains("/auth/login"));
+        page().locator("a[href='/logout']").first().click();
+        page().waitForSelector("input[data-qa='login-email']");
+        Assertions.assertThat(page().url()).as("Should be on login page").contains("/login");
     }
 }

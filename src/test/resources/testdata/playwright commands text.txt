@@ -1,0 +1,9 @@
+Playwright Commands Reference
+=============================
+page.navigate(url)       - Navigate to a URL
+page.locator(selector)   - Create a locator for an element
+locator.click()          - Click an element
+locator.fill(text)       - Fill an input field
+locator.isVisible()      - Check element visibility
+locator.innerText()      - Get inner text of element
+page.waitForSelector()   - Wait for element to appear in DOM

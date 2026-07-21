@@ -22,6 +22,27 @@
         </classes>
     </test>
 
+    <test name="Contact Us">
+        <classes>
+            <class name="com.bjitgroup.tests.ContactUs"/>
+        </classes>
+    </test>
+
+    <test name="Standalone Test Cases">
+        <classes>
+            <class name="com.bjitgroup.tests.LoginTest"/>
+            <class name="com.bjitgroup.tests.LogoutTest"/>
+            <class name="com.bjitgroup.tests.TestCasesPageTest"/>
+            <class name="com.bjitgroup.tests.ProductTest"/>
+            <class name="com.bjitgroup.tests.SubscriptionTest"/>
+            <class name="com.bjitgroup.tests.CartTest"/>
+            <class name="com.bjitgroup.tests.OrderTest"/>
+            <class name="com.bjitgroup.tests.CategoryBrandTest"/>
+            <class name="com.bjitgroup.tests.ProductReviewTest"/>
+            <class name="com.bjitgroup.tests.ScrollTest"/>
+        </classes>
+    </test>
+
     <!-- Admin User CRUD -->
 <!--    <test name="User Management Tests">-->
 <!--        <classes>-->
