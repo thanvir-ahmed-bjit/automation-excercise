@@ -13,6 +13,7 @@ import org.testng.annotations.Test;
 @Feature("Account")
 public class DeleteUser extends BaseTest {
 
+    // Test Case (E2E): Created user should be deleted at the end of flow
     @Test(
             description = "Created user should be deleted at the end of flow",
             dependsOnGroups = {"account-created", "product-added-logout"}
@@ -25,10 +26,8 @@ public class DeleteUser extends BaseTest {
                 .open()
                 .loginAs(TestAccountStore.email(), TestAccountStore.password());
 
-        page().locator("a[href='/delete_account']").first().click();
-        String deletedMessage = page().locator("//b[normalize-space()='Account Deleted!']").innerText();
-
-        Assertions.assertThat(deletedMessage)
+        pages().homePage().clickDeleteAccount();
+        Assertions.assertThat(pages().homePage().getAccountDeletedMessage())
                 .as("Delete account confirmation should be visible")
                 .isEqualTo("ACCOUNT DELETED!");
     }

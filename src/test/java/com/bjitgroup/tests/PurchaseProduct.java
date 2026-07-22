@@ -13,8 +13,7 @@ import org.testng.annotations.Test;
 @Feature("Purchase")
 public class PurchaseProduct extends BaseTest {
 
-    private static final String BASE_URL = "https://automationexercise.com";
-
+    // Test Case (E2E): Created user should purchase a product successfully
     @Test(
             description = "Created user should purchase a product successfully",
             dependsOnGroups = {"account-created", "products-visited"},
@@ -28,29 +27,27 @@ public class PurchaseProduct extends BaseTest {
                 .open()
                 .loginAs(TestAccountStore.email(), TestAccountStore.password());
 
-        page().navigate(BASE_URL + "/products");
-        page().locator("a.add-to-cart[data-product-id='1']").first().click();
-        page().locator("div#cartModal a[href='/view_cart']").click();
+        pages().productsPage().open();
+        pages().productsPage().addProductByIdToCart("1");
+        pages().productsPage().clickViewCartInModal();
 
-        page().locator("a:has-text('Proceed To Checkout')").first().click();
-        page().locator("a:has-text('Place Order')").first().click();
+        pages().cartPage().clickProceedToCheckout();
+        pages().checkoutPage().clickPlaceOrder();
 
-        page().fill("input[data-qa='name-on-card']", TestAccountStore.name());
-        page().fill("input[data-qa='card-number']", "4111111111111111");
-        page().fill("input[data-qa='cvc']", "123");
-        page().fill("input[data-qa='expiry-month']", "12");
-        page().fill("input[data-qa='expiry-year']", "2030");
-        page().locator("button[data-qa='pay-button']").click();
+        pages().paymentPage().waitUntilLoaded()
+                .fillCardName(TestAccountStore.name())
+                .fillCardNumber("4111111111111111")
+                .fillCvc("123")
+                .fillExpiryMonth("12")
+                .fillExpiryYear("2030")
+                .clickPay();
 
-        String successMessage = page()
-                .locator("p:has-text('Congratulations! Your order has been confirmed!')")
-                .innerText();
-
-        Assertions.assertThat(successMessage)
+        Assertions.assertThat(pages().orderConfirmationPage().getSuccessMessage())
                 .as("Order confirmation message should be shown after payment")
                 .contains("Congratulations! Your order has been confirmed!");
     }
 
+    // Test Case (E2E): Created user should add a product and logout
     @Test(
             description = "Created user should add a product and logout",
             dependsOnGroups = {"account-created", "products-visited"},
@@ -64,18 +61,15 @@ public class PurchaseProduct extends BaseTest {
                 .open()
                 .loginAs(TestAccountStore.email(), TestAccountStore.password());
 
-        page().navigate(BASE_URL + "/products");
-        page().locator("a.add-to-cart[data-product-id='1']").first().click();
-        page().locator("div#cartModal a[href='/view_cart']").click();
+        pages().productsPage().open();
+        pages().productsPage().addProductByIdToCart("1");
+        pages().productsPage().clickViewCartInModal();
 
-        Assertions.assertThat(page().url())
-                .as("User should be on cart page after adding a product")
-                .contains("/view_cart");
+        Assertions.assertThat(pages().cartPage().isOnCartPage())
+                .as("User should be on cart page after adding a product").isTrue();
 
-        page().locator("a[href='/logout']").first().click();
-
-        Assertions.assertThat(page().url())
-                .as("User should be redirected to login page after logout")
-                .contains("/login");
+        pages().homePage().clickLogout();
+        Assertions.assertThat(pages().loginPage().isLoginPageDisplayed())
+                .as("User should be redirected to login page after logout").isTrue();
     }
 }

@@ -1,5 +1,6 @@
 package com.bjitgroup.actions;
 
+import com.microsoft.playwright.Download;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.LoadState;
@@ -248,6 +249,29 @@ public final class BrowserActions {
     /** Returns the number of elements matching the selector. */
     public int count(String selector) {
         return locator(selector).count();
+    }
+
+    /** Executes JavaScript in the page context and returns the result. */
+    public Object evaluate(String script) {
+        validateText(script, "Script");
+        return page.evaluate(script);
+    }
+
+    /** Registers a one-time dialog acceptor so the next dialog is auto-accepted. */
+    public void acceptNextDialog() {
+        page.onDialog(dialog -> dialog.accept());
+    }
+
+    /** Waits for the given number of milliseconds. */
+    public void waitMs(long ms) {
+        if (ms < 0) throw new IllegalArgumentException("Duration must not be negative");
+        page.waitForTimeout(ms);
+    }
+
+    /** Waits for a download triggered by the provided action and returns the Download. */
+    public Download waitForDownload(Runnable action) {
+        Objects.requireNonNull(action, "Action must not be null");
+        return page.waitForDownload(action::run);
     }
 
 }

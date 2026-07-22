@@ -10,68 +10,48 @@ import org.testng.annotations.Test;
 @Feature("Order")
 public class OrderTest extends BaseTest {
 
-    private static final String BASE_URL = "https://automationexercise.com";
-
     private void addFirstProductToCart() {
-        page().navigate(BASE_URL + "/products");
-        page().waitForSelector(".product-image-wrapper");
-        page().locator(".product-image-wrapper").first().hover();
-        page().locator(".product-image-wrapper").first().locator("a.add-to-cart").click();
-        page().waitForSelector("div#cartModal");
-        page().locator("button:has-text('Continue Shopping')").click();
+        pages().productsPage().open();
+        pages().productsPage().hoverAndAddToCart(0).clickContinueShopping();
     }
 
     private void completePayment() {
-        page().fill("input[data-qa='name-on-card']", "Test User");
-        page().fill("input[data-qa='card-number']", "4111111111111111");
-        page().fill("input[data-qa='cvc']", "123");
-        page().fill("input[data-qa='expiry-month']", "12");
-        page().fill("input[data-qa='expiry-year']", "2030");
-        page().locator("button[data-qa='pay-button']").click();
+        pages().paymentPage().waitUntilLoaded()
+                .fillCardName("Test User")
+                .fillCardNumber("4111111111111111")
+                .fillCvc("123")
+                .fillExpiryMonth("12")
+                .fillExpiryYear("2030")
+                .clickPay();
     }
 
+    // Test Case 14: Place Order: Register while Checkout
     @Test(description = "Place Order - Register while Checkout")
     @Severity(SeverityLevel.BLOCKER)
     @Story("Order Placement")
     @Description("Add product as guest, proceed to checkout, register via modal, checkout, pay, verify success, delete account.")
     public void placeOrderRegisterWhileCheckout() {
-        // Add product as guest
         addFirstProductToCart();
 
-        // Go to cart
-        page().navigate(BASE_URL + "/view_cart");
-        page().waitForSelector("a:has-text('Proceed To Checkout')");
-        page().locator("a:has-text('Proceed To Checkout')").click();
+        pages().cartPage().open().clickProceedToCheckout();
+        pages().cartPage().clickRegisterLoginInModal();
 
-        // Modal for not-logged-in user
-        page().waitForSelector(".modal-body a[href='/login']");
-        page().locator(".modal-body a[href='/login']").click();
-
-        // Create account
         AccountHelper.createAccount(page());
 
-        // Back to cart and checkout
-        page().navigate(BASE_URL + "/view_cart");
-        page().waitForSelector("a:has-text('Proceed To Checkout')");
-        page().locator("a:has-text('Proceed To Checkout')").click();
+        pages().cartPage().open().clickProceedToCheckout();
+        Assertions.assertThat(pages().checkoutPage().isDeliveryAddressVisible())
+                .as("Delivery address should be visible").isTrue();
 
-        page().waitForSelector("#address_delivery");
-        Assertions.assertThat(page().locator("#address_delivery").isVisible())
-            .as("Delivery address should be visible").isTrue();
-
-        page().fill("textarea.form-control", "Test order comment");
-        page().locator("a:has-text('Place Order')").click();
-
-        page().waitForSelector("input[data-qa='name-on-card']");
+        pages().checkoutPage().fillComment("Test order comment").clickPlaceOrder();
         completePayment();
 
-        page().waitForSelector("p:has-text('Congratulations')");
-        Assertions.assertThat(page().locator("p:has-text('Congratulations')").isVisible())
-            .as("Order success message should be visible").isTrue();
+        Assertions.assertThat(pages().orderConfirmationPage().isSuccessMessageVisible())
+                .as("Order success message should be visible").isTrue();
 
         AccountHelper.deleteAccount(page());
     }
 
+    // Test Case 15: Place Order: Register before Checkout
     @Test(description = "Place Order - Register before Checkout")
     @Severity(SeverityLevel.BLOCKER)
     @Story("Order Placement")
@@ -81,29 +61,22 @@ public class OrderTest extends BaseTest {
 
         addFirstProductToCart();
 
-        page().navigate(BASE_URL + "/view_cart");
-        page().waitForSelector("a:has-text('Proceed To Checkout')");
-        page().locator("a:has-text('Proceed To Checkout')").click();
+        pages().cartPage().open().clickProceedToCheckout();
+        Assertions.assertThat(pages().checkoutPage().isDeliveryAddressVisible())
+                .as("Delivery address should be visible").isTrue();
+        Assertions.assertThat(pages().checkoutPage().isBillingAddressVisible())
+                .as("Billing address should be visible").isTrue();
 
-        page().waitForSelector("#address_delivery");
-        Assertions.assertThat(page().locator("#address_delivery").isVisible())
-            .as("Delivery address should be visible").isTrue();
-        Assertions.assertThat(page().locator("#address_invoice").isVisible())
-            .as("Billing address should be visible").isTrue();
-
-        page().fill("textarea.form-control", "Test order comment");
-        page().locator("a:has-text('Place Order')").click();
-
-        page().waitForSelector("input[data-qa='name-on-card']");
+        pages().checkoutPage().fillComment("Test order comment").clickPlaceOrder();
         completePayment();
 
-        page().waitForSelector("p:has-text('Congratulations')");
-        Assertions.assertThat(page().locator("p:has-text('Congratulations')").isVisible())
-            .as("Order success message should be visible").isTrue();
+        Assertions.assertThat(pages().orderConfirmationPage().isSuccessMessageVisible())
+                .as("Order success message should be visible").isTrue();
 
         AccountHelper.deleteAccount(page());
     }
 
+    // Test Case 16: Place Order: Login before Checkout
     @Test(description = "Place Order - Login before Checkout")
     @Severity(SeverityLevel.BLOCKER)
     @Story("Order Placement")
@@ -113,39 +86,30 @@ public class OrderTest extends BaseTest {
         String email = account[1];
         String password = account[2];
 
-        // Logout
-        page().locator("a[href='/logout']").first().click();
-        page().waitForSelector("input[data-qa='login-email']");
+        pages().homePage().clickLogout();
+        pages().loginPage().waitUntilLoaded();
 
-        // Login
-        page().navigate(BASE_URL);
-        page().locator("a[href='/login']").first().click();
+        pages().homePage().open();
+        pages().homePage().clickSignupLogin();
         pages().loginPage().waitUntilLoaded().attemptLogin(email, password);
-        page().waitForSelector("//a[contains(normalize-space(),'Logged in as')]");
+        pages().homePage().waitUntilLoaded();
 
         addFirstProductToCart();
 
-        page().navigate(BASE_URL + "/view_cart");
-        page().waitForSelector("a:has-text('Proceed To Checkout')");
-        page().locator("a:has-text('Proceed To Checkout')").click();
+        pages().cartPage().open().clickProceedToCheckout();
+        Assertions.assertThat(pages().checkoutPage().isDeliveryAddressVisible())
+                .as("Delivery address should be visible").isTrue();
 
-        page().waitForSelector("#address_delivery");
-        Assertions.assertThat(page().locator("#address_delivery").isVisible())
-            .as("Delivery address should be visible").isTrue();
-
-        page().fill("textarea.form-control", "Test order comment");
-        page().locator("a:has-text('Place Order')").click();
-
-        page().waitForSelector("input[data-qa='name-on-card']");
+        pages().checkoutPage().fillComment("Test order comment").clickPlaceOrder();
         completePayment();
 
-        page().waitForSelector("p:has-text('Congratulations')");
-        Assertions.assertThat(page().locator("p:has-text('Congratulations')").isVisible())
-            .as("Order success message should be visible").isTrue();
+        Assertions.assertThat(pages().orderConfirmationPage().isSuccessMessageVisible())
+                .as("Order success message should be visible").isTrue();
 
         AccountHelper.deleteAccount(page());
     }
 
+    // Test Case 23: Verify address details in checkout page
     @Test(description = "Verify address details in checkout page match signup data")
     @Severity(SeverityLevel.NORMAL)
     @Story("Checkout Address")
@@ -155,68 +119,47 @@ public class OrderTest extends BaseTest {
 
         addFirstProductToCart();
 
-        page().navigate(BASE_URL + "/view_cart");
-        page().waitForSelector("a:has-text('Proceed To Checkout')");
-        page().locator("a:has-text('Proceed To Checkout')").click();
-
-        page().waitForSelector("#address_delivery");
-        String deliveryAddress = page().locator("#address_delivery").innerText();
-        String billingAddress = page().locator("#address_invoice").innerText();
+        pages().cartPage().open().clickProceedToCheckout();
+        String deliveryAddress = pages().checkoutPage().getDeliveryAddressText();
+        String billingAddress = pages().checkoutPage().getBillingAddressText();
 
         Assertions.assertThat(deliveryAddress)
-            .as("Delivery address should contain first name").contains("Test");
+                .as("Delivery address should contain first name").contains("Test");
         Assertions.assertThat(deliveryAddress)
-            .as("Delivery address should contain last name").contains("User");
+                .as("Delivery address should contain last name").contains("User");
         Assertions.assertThat(billingAddress)
-            .as("Billing address should contain first name").contains("Test");
+                .as("Billing address should contain first name").contains("Test");
         Assertions.assertThat(billingAddress)
-            .as("Billing address should contain last name").contains("User");
+                .as("Billing address should contain last name").contains("User");
 
-        page().navigate(BASE_URL);
         AccountHelper.deleteAccount(page());
     }
 
+    // Test Case 24: Download Invoice after purchase order
     @Test(description = "Download Invoice after purchase order")
     @Severity(SeverityLevel.NORMAL)
     @Story("Download Invoice")
     @Description("Add product as guest, register via checkout modal, complete order, download invoice, delete account.")
     public void downloadInvoiceAfterPurchase() {
-        // Add product as guest
         addFirstProductToCart();
 
-        page().navigate(BASE_URL + "/view_cart");
-        page().waitForSelector("a:has-text('Proceed To Checkout')");
-        page().locator("a:has-text('Proceed To Checkout')").click();
-
-        // Modal for guest
-        page().waitForSelector(".modal-body a[href='/login']");
-        page().locator(".modal-body a[href='/login']").click();
+        pages().cartPage().open().clickProceedToCheckout();
+        pages().cartPage().clickRegisterLoginInModal();
 
         AccountHelper.createAccount(page());
 
-        page().navigate(BASE_URL + "/view_cart");
-        page().waitForSelector("a:has-text('Proceed To Checkout')");
-        page().locator("a:has-text('Proceed To Checkout')").click();
-
-        page().waitForSelector("#address_delivery");
-        page().fill("textarea.form-control", "Test invoice order");
-        page().locator("a:has-text('Place Order')").click();
-
-        page().waitForSelector("input[data-qa='name-on-card']");
+        pages().cartPage().open().clickProceedToCheckout();
+        pages().checkoutPage().fillComment("Test invoice order").clickPlaceOrder();
         completePayment();
 
-        page().waitForSelector("p:has-text('Congratulations')");
-        Assertions.assertThat(page().locator("p:has-text('Congratulations')").isVisible())
-            .as("Order success message should be visible").isTrue();
+        Assertions.assertThat(pages().orderConfirmationPage().isSuccessMessageVisible())
+                .as("Order success message should be visible").isTrue();
 
-        // Download invoice
-        Download download = page().waitForDownload(() ->
-            page().locator("a.btn-default:has-text('Download Invoice')").click()
-        );
+        Download download = pages().orderConfirmationPage().downloadInvoice();
         Assertions.assertThat(download.suggestedFilename())
-            .as("Downloaded file name should not be empty").isNotEmpty();
+                .as("Downloaded file name should not be empty").isNotEmpty();
 
-        page().locator("a[data-qa='continue-button']").click();
+        pages().orderConfirmationPage().clickContinue();
         AccountHelper.deleteAccount(page());
     }
 }

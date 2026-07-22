@@ -16,6 +16,7 @@ import org.testng.annotations.Test;
 @Feature("Authentication")
 public class SignupTest extends BaseTest {
 
+    // Test Case 1: Register User
     @Test(
             priority = 1,
             description = "New user should be able to complete signup successfully",
@@ -59,6 +60,7 @@ public class SignupTest extends BaseTest {
         TestAccountStore.save(fullName, email, password);
     }
 
+    // Test Case 5: Register User with existing email
     @Test(
             priority = 2,
             description = "Register User with existing email",
@@ -68,23 +70,20 @@ public class SignupTest extends BaseTest {
     @Story("Signup")
     @Description("Open signup/login, submit an already-registered email, and verify duplicate-email error.")
     public void registerUserWithExistingEmailShouldShowError() {
-        LoginPage loginPage = pages().loginPage();
+        pages().homePage().open();
+        Assertions.assertThat(pages().homePage().isLoaded())
+                .as("Home page should be visible").isTrue();
 
-        page().navigate("http://automationexercise.com");
-        Assertions.assertThat(page().locator("img[alt='Website for automation practice']").isVisible())
-                .as("Home page should be visible")
-                .isTrue();
+        pages().homePage().clickSignupLogin();
+        Assertions.assertThat(pages().loginPage().isSignupFormVisible())
+                .as("'New User Signup!' should be visible").isTrue();
 
-        page().locator("a[href='/login']").first().click();
-        Assertions.assertThat(loginPage.waitUntilLoaded().isSignupFormVisible())
-                .as("'New User Signup!' should be visible")
-                .isTrue();
-
-        loginPage.enterSignupName(RandomDataUtils.fullName())
+        pages().loginPage()
+                .enterSignupName(RandomDataUtils.fullName())
                 .enterSignupEmail(TestAccountStore.email())
                 .clickSignupExpectingError();
 
-        Assertions.assertThat(loginPage.getSignupErrorMessage())
+        Assertions.assertThat(pages().loginPage().getSignupErrorMessage())
                 .as("Duplicate-email error message should be visible")
                 .contains("Email Address already exist!");
     }

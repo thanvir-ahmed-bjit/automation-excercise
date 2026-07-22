@@ -9,6 +9,7 @@ import org.testng.annotations.Test;
 @Feature("Authentication")
 public class LogoutTest extends BaseTest {
 
+    // Test Case 4: Logout User
     @Test(description = "Logout User should navigate to login page")
     @Severity(SeverityLevel.CRITICAL)
     @Story("Logout")
@@ -18,21 +19,22 @@ public class LogoutTest extends BaseTest {
         String email = account[1];
         String password = account[2];
 
-        page().navigate("https://automationexercise.com");
-        Assertions.assertThat(page().locator("img[alt='Website for automation practice']").isVisible())
-            .as("Home page should be visible").isTrue();
+        pages().homePage().open();
+        Assertions.assertThat(pages().homePage().isLoaded())
+                .as("Home page should be visible").isTrue();
 
-        page().locator("a[href='/login']").first().click();
-        Assertions.assertThat(pages().loginPage().waitUntilLoaded().isLoginPageDisplayed())
-            .as("Login to your account should be visible").isTrue();
+        pages().homePage().clickSignupLogin();
+        Assertions.assertThat(pages().loginPage().isLoginPageDisplayed())
+                .as("Login to your account should be visible").isTrue();
 
         pages().loginPage().attemptLogin(email, password);
-        page().waitForSelector("//a[contains(normalize-space(),'Logged in as')]");
-        Assertions.assertThat(page().locator("//a[contains(normalize-space(),'Logged in as')]").isVisible())
-            .as("User should be logged in").isTrue();
+        pages().homePage().waitUntilLoaded();
+        Assertions.assertThat(pages().homePage().isLoggedIn())
+                .as("User should be logged in").isTrue();
 
-        page().locator("a[href='/logout']").first().click();
-        page().waitForSelector("input[data-qa='login-email']");
-        Assertions.assertThat(page().url()).as("Should be on login page").contains("/login");
+        pages().homePage().clickLogout();
+        pages().loginPage().waitUntilLoaded();
+        Assertions.assertThat(pages().loginPage().isLoginPageDisplayed())
+                .as("Should be on login page after logout").isTrue();
     }
 }

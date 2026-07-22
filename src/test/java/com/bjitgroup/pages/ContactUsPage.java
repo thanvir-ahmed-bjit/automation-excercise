@@ -59,6 +59,7 @@ public final class ContactUsPage extends BasePage {
     }
 
     public ContactUsPage clickSubmit() {
+        browser.acceptNextDialog();
         input.click(loc.getProperty("submitButton"));
         return this;
     }

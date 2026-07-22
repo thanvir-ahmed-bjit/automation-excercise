@@ -13,8 +13,7 @@ import org.testng.annotations.Test;
 @Feature("Products")
 public class ProductPage extends BaseTest {
 
-    private static final String BASE_URL = "https://automationexercise.com";
-
+    // Test Case (E2E): Created user should be able to login and visit product list
     @Test(
             description = "Created user should be able to login and visit product list",
             dependsOnGroups = "account-created",
@@ -28,11 +27,8 @@ public class ProductPage extends BaseTest {
                 .open()
                 .loginAs(TestAccountStore.email(), TestAccountStore.password());
 
-        page().navigate(BASE_URL + "/products");
-        page().waitForSelector("//h2[normalize-space()='All Products']");
-
-        Assertions.assertThat(page().url())
-                .as("Products page URL should be opened")
-                .contains("/products");
+        pages().productsPage().open();
+        Assertions.assertThat(pages().productsPage().isLoaded())
+                .as("Products page should be loaded").isTrue();
     }
 }
