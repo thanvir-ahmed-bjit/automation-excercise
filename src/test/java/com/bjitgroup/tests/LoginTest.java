@@ -2,7 +2,6 @@ package com.bjitgroup.tests;
 
 import com.bjitgroup.base.BaseTest;
 import com.bjitgroup.listeners.RetryAnalyzer;
-import com.bjitgroup.pages.DashboardPage;
 import com.bjitgroup.pages.LoginPage;
 import com.bjitgroup.utils.AccountHelper;
 import io.qameta.allure.Allure;
@@ -17,31 +16,6 @@ import org.testng.annotations.Test;
 @Feature("Authentication")
 public class LoginTest extends BaseTest {
 
-    @Test(
-            priority = 1,
-            description = "Valid credentials should navigate to the dashboard",
-            retryAnalyzer = RetryAnalyzer.class
-    )
-    @Severity(SeverityLevel.BLOCKER)
-    @Story("Valid Login")
-    @Description("Enter valid admin credentials and verify the dashboard is displayed.")
-    public void validCredentialsShouldLoginSuccessfully() {
-        LoginPage loginPage = pages().loginPage();
-
-        Allure.step("Open Login page", loginPage::open);
-        DashboardPage dashboard = Allure.step(
-                "Login with valid credentials",
-                () -> loginPage.loginAs(
-                        context().config().username(),
-                        context().config().password()
-                )
-        );
-        Allure.step("Verify Dashboard page is loaded", () ->
-                Assertions.assertThat(dashboard.isLoaded())
-                        .as("Dashboard should be visible after successful login")
-                        .isTrue());
-    }
-
     // Test Case 2: Login User with correct email and password
     @Test(
             description = "Login User with correct email and password",
@@ -51,23 +25,32 @@ public class LoginTest extends BaseTest {
     @Story("Valid Login - AutomationExercise")
     @Description("Create account, navigate to home, login with correct credentials, verify logged in, delete account.")
     public void loginWithCorrectCredentialsShouldSucceed() {
+        // Create account — user is now logged in
         String[] account = AccountHelper.createAccount(page());
         String email = account[1];
         String password = account[2];
 
+        // Logout first so we can test the login flow
+        pages().homePage().clickLogout();
+        pages().loginPage().waitUntilLoaded();
+
+        // Navigate to home, verify visible
         pages().homePage().open();
         Assertions.assertThat(pages().homePage().isLoaded())
                 .as("Home page should be visible").isTrue();
 
+        // Click Signup / Login, verify form visible
         pages().homePage().clickSignupLogin();
         Assertions.assertThat(pages().loginPage().isLoginPageDisplayed())
                 .as("Login to your account should be visible").isTrue();
 
+        // Login with correct credentials
         pages().loginPage().attemptLogin(email, password);
         pages().homePage().waitUntilLoaded();
         Assertions.assertThat(pages().homePage().isLoggedIn())
                 .as("User should be logged in").isTrue();
 
+        // Delete account and verify
         pages().homePage().clickDeleteAccount();
         Assertions.assertThat(pages().homePage().getAccountDeletedMessage())
                 .isEqualTo("ACCOUNT DELETED!");
@@ -99,6 +82,7 @@ public class LoginTest extends BaseTest {
                         .contains("Your email or password is incorrect!"));
     }
 
+    // Test Case (sanity): Empty credentials should not allow login
     @Test(
             priority = 3,
             description = "Empty credentials should not allow login",

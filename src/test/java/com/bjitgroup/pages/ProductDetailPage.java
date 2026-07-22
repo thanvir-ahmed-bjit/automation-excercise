@@ -24,6 +24,7 @@ public final class ProductDetailPage extends BasePage {
 
     public ProductDetailPage waitUntilLoaded() {
         browser.waitForVisible(loc.getProperty("productInfoContainer"));
+        browser.waitForPageLoad();
         return this;
     }
 

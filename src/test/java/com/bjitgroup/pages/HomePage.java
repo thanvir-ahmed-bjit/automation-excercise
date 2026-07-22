@@ -42,7 +42,7 @@ public final class HomePage extends BasePage {
     }
 
     public TestCasesPage clickTestCases() {
-        input.click(loc.getProperty("testCasesLink"));
+        input.click(browser.locator(loc.getProperty("testCasesLink")).first());
         return pages.testCasesPage().waitUntilLoaded();
     }
 
@@ -160,7 +160,7 @@ public final class HomePage extends BasePage {
     }
 
     public HomePage clickFirstMenSubcategory() {
-        input.click(loc.getProperty("menFirstSubcategoryLink"));
+        input.click(browser.locator(loc.getProperty("menFirstSubcategoryLink")).first());
         return this;
     }
 

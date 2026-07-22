@@ -50,7 +50,7 @@ public final class ProductsPage extends BasePage {
     }
 
     public ProductsPage addProductByIdToCart(String productId) {
-        input.click("a.add-to-cart[data-product-id='" + productId + "']");
+        input.click(browser.locator("a.add-to-cart[data-product-id='" + productId + "']").first());
         browser.waitForVisible(loc.getProperty("cartModal"));
         return this;
     }
@@ -85,17 +85,21 @@ public final class ProductsPage extends BasePage {
     public ProductsPage clickFirstBrand() {
         browser.waitForVisible(loc.getProperty("firstBrandLink"));
         input.click(loc.getProperty("firstBrandLink"));
+        browser.waitForUrlContains("/brand_products/");
+        browser.waitForVisible(loc.getProperty("brandPageTitle"));
         return this;
     }
 
     public ProductsPage clickSecondBrand() {
         browser.waitForVisible(loc.getProperty("secondBrandLink"));
         input.click(loc.getProperty("secondBrandLink"));
+        browser.waitForUrlContains("/brand_products/");
+        browser.waitForVisible(loc.getProperty("brandPageTitle"));
         return this;
     }
 
     public String getBrandPageTitle() {
-        browser.waitForVisible(loc.getProperty("categoryPageTitle"));
-        return browser.textOf(loc.getProperty("categoryPageTitle"));
+        browser.waitForVisible(loc.getProperty("brandPageTitle"));
+        return browser.textOf(loc.getProperty("brandPageTitle"));
     }
 }

@@ -15,24 +15,21 @@ public class LogoutTest extends BaseTest {
     @Story("Logout")
     @Description("Create account, login, verify logged in, logout, verify navigated to login page.")
     public void logoutUserShouldNavigateToLoginPage() {
+        // Create account — user is now logged in on the home page
         String[] account = AccountHelper.createAccount(page());
-        String email = account[1];
-        String password = account[2];
 
-        pages().homePage().open();
+        // Verify home page is visible (user is already logged in)
         Assertions.assertThat(pages().homePage().isLoaded())
                 .as("Home page should be visible").isTrue();
 
-        pages().homePage().clickSignupLogin();
-        Assertions.assertThat(pages().loginPage().isLoginPageDisplayed())
-                .as("Login to your account should be visible").isTrue();
-
-        pages().loginPage().attemptLogin(email, password);
-        pages().homePage().waitUntilLoaded();
+        // Verify user is logged in
         Assertions.assertThat(pages().homePage().isLoggedIn())
-                .as("User should be logged in").isTrue();
+                .as("User should be logged in after account creation").isTrue();
 
+        // Click Logout
         pages().homePage().clickLogout();
+
+        // Verify navigated to login page
         pages().loginPage().waitUntilLoaded();
         Assertions.assertThat(pages().loginPage().isLoginPageDisplayed())
                 .as("Should be on login page after logout").isTrue();

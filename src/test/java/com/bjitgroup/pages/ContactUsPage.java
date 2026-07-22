@@ -71,7 +71,7 @@ public final class ContactUsPage extends BasePage {
     }
 
     public ContactUsPage clickHome() {
-        input.click(loc.getProperty("homeButton"));
+        input.click(browser.locator(loc.getProperty("homeButton")).first());
         return this;
     }
 
