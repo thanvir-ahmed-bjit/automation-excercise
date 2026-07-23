@@ -1,0 +1,542 @@
+--- a/src/main/java/com/bjitgroup/actions/BrowserActions.java
++++ b/src/main/java/com/bjitgroup/actions/BrowserActions.java
+@@ -5,6 +5,7 @@
+ import com.microsoft.playwright.Page;
+ import com.microsoft.playwright.options.LoadState;
+ import com.microsoft.playwright.options.WaitForSelectorState;
++import com.microsoft.playwright.options.WaitUntilState;
+
+ import java.util.Objects;
+ import java.util.regex.Pattern;
+@@ -103,11 +104,21 @@
+
+     /**
+      * Waits until the current URL contains the specified text.
++     *
++     * <p>Playwright's {@code waitForURL} defaults to {@code waitUntil=LOAD}, which
++     * blocks until every sub-resource has finished - including third-party ad and
++     * maps scripts that this site loads. Those resources are irrelevant to a URL
++     * assertion and can easily outlast the timeout, turning a successful navigation
++     * into a spurious {@code TimeoutError}. DOMCONTENTLOADED is the correct barrier
++     * here: the document is parsed and the URL is final, and callers follow this
++     * with an explicit element wait for real readiness.</p>
+      */
+     public void waitForUrlContains(String expectedUrlPart) {
+         validateText(expectedUrlPart, "Expected URL part");
+         Pattern urlPattern = Pattern.compile(".*" + Pattern.quote(expectedUrlPart) + ".*");
+-        page.waitForURL(urlPattern, new Page.WaitForURLOptions().setTimeout(timeoutMs));
++        page.waitForURL(urlPattern, new Page.WaitForURLOptions()
++                .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
++                .setTimeout(timeoutMs));
+     }
+
+     /** Waits until DOMContentLoaded is reached. */
+@@ -257,9 +268,80 @@
+         return page.evaluate(script);
+     }
+
+-    /** Registers a one-time dialog acceptor so the next dialog is auto-accepted. */
++    // ---------------------------------------------------------------
++    // HTML5 constraint validation
++    //
++    // Native validation bubbles ("Please fill out this field") are drawn by the
++    // browser itself, not inserted into the DOM, so no locator can ever find
++    // them. Waiting for a page-rendered error on a field that carries the HTML5
++    // "required" attribute therefore always ends in a timeout. These queries read
++    // the Constraint Validation API instead, which is what such fields actually
++    // expose.
++    // ---------------------------------------------------------------
++
++    /** Returns {@code true} when the field currently satisfies its HTML5 constraints. */
++    public boolean isFieldValid(String selector) {
++        validateSelector(selector);
++        return Boolean.TRUE.equals(
++                page.evalOnSelector(selector, "el => el.checkValidity()"));
++    }
++
++    /**
++     * Returns the browser's native validation message for the field, or an empty
++     * string when the field is valid.
++     *
++     * <p>The text is browser- and locale-dependent, so assert on
++     * {@link #hasValidityFlag(String, String)} in tests and use this only for
++     * diagnostics and failure messages.</p>
++     */
++    public String getValidationMessage(String selector) {
++        validateSelector(selector);
++        Object msg = page.evalOnSelector(selector, "el => el.validationMessage");
++        return msg == null ? "" : String.valueOf(msg);
++    }
++
++    /**
++     * Returns the state of a single {@code ValidityState} flag, for example
++     * {@code valueMissing} for an empty required field or {@code typeMismatch}
++     * for a malformed email address.
++     *
++     * <p>Preferred over message-text assertions because these flags are part of
++     * the HTML standard and do not change with browser locale.</p>
++     */
++    public boolean hasValidityFlag(String selector, String flag) {
++        validateSelector(selector);
++        validateText(flag, "Validity flag");
++        Object result = page.evalOnSelector(
++                selector, "(el, f) => { const v = el.validity; if (!(f in v)) "
++                        + "throw new Error('Unknown ValidityState flag: ' + f); return v[f]; }", flag);
++        return Boolean.TRUE.equals(result);
++    }
++
++    /**
++     * Returns the id of the first element in the document that fails HTML5
++     * validation, or an empty string when every field is valid. Useful for
++     * asserting which field the browser blocked submission on.
++     */
++    public String firstInvalidFieldId() {
++        // Scoped to controls: a <form> also matches :invalid when it contains an
++        // invalid control, which would otherwise be reported instead of the field.
++        Object id = page.evaluate(
++                "() => { const el = document.querySelector("
++                        + "'input:invalid, select:invalid, textarea:invalid'); "
++                        + "return el ? (el.id || el.name || el.tagName.toLowerCase()) : ''; }");
++        return id == null ? "" : String.valueOf(id);
++    }
++
++    /**
++     * Registers a one-time dialog acceptor so the next dialog is auto-accepted.
++     *
++     * <p>Uses {@code onceDialog} rather than {@code onDialog}: the latter stays
++     * registered for the lifetime of the page, so repeated calls accumulate
++     * handlers and a later handler would invoke {@code accept()} on a dialog that
++     * an earlier handler already handled.</p>
++     */
+     public void acceptNextDialog() {
+-        page.onDialog(dialog -> dialog.accept());
++        page.onceDialog(dialog -> dialog.accept());
+     }
+
+     /** Waits for the given number of milliseconds. */
+--- a/src/test/java/com/bjitgroup/pages/LoginPage.java
++++ b/src/test/java/com/bjitgroup/pages/LoginPage.java
+@@ -115,4 +115,28 @@
+         browser.waitForVisible(selector);
+         return browser.textOf(selector);
+     }
++
++    // ---------------------------------------------------------------
++    // HTML5 constraint validation
++    //
++    // Both login inputs are declared "required" and the email input is
++    // type="email", so an empty or malformed entry is rejected by the browser
++    // before any request is sent. There is no page-rendered error to locate in
++    // that case, so these accessors expose the Constraint Validation API.
++    // ---------------------------------------------------------------
++
++    /** Returns {@code true} when the field named by the locator key passes HTML5 validation. */
++    public boolean isFieldValid(String locatorKey) {
++        return browser.isFieldValid(loc.getProperty(locatorKey));
++    }
++
++    /** Returns a single {@code ValidityState} flag, e.g. {@code valueMissing} or {@code typeMismatch}. */
++    public boolean hasValidityFlag(String locatorKey, String flag) {
++        return browser.hasValidityFlag(loc.getProperty(locatorKey), flag);
++    }
++
++    /** Returns the browser's native validation message for diagnostics. */
++    public String getValidationMessage(String locatorKey) {
++        return browser.getValidationMessage(loc.getProperty(locatorKey));
++    }
+ }
+\ No newline at end of file
+--- a/src/test/java/com/bjitgroup/pages/SignupPage.java
++++ b/src/test/java/com/bjitgroup/pages/SignupPage.java
+@@ -134,4 +134,38 @@
+         input.click(loc.getProperty("logoutLink"));
+         return pages.loginPage().waitUntilLoaded();
+     }
++
++    // ---------------------------------------------------------------
++    // HTML5 constraint validation
++    //
++    // Password, First name, Last name, Address, Country, State, City, Zipcode
++    // and Mobile Number are all declared "required", so leaving any one empty
++    // makes the browser block submission without rendering a page error.
++    // ---------------------------------------------------------------
++
++    /** Clears the field named by the locator key. */
++    public SignupPage clearField(String locatorKey) {
++        input.fill(loc.getProperty(locatorKey), "");
++        return this;
++    }
++
++    /** Returns {@code true} when the field named by the locator key passes HTML5 validation. */
++    public boolean isFieldValid(String locatorKey) {
++        return browser.isFieldValid(loc.getProperty(locatorKey));
++    }
++
++    /** Returns a single {@code ValidityState} flag, e.g. {@code valueMissing}. */
++    public boolean hasValidityFlag(String locatorKey, String flag) {
++        return browser.hasValidityFlag(loc.getProperty(locatorKey), flag);
++    }
++
++    /** Returns the browser's native validation message for diagnostics. */
++    public String getValidationMessage(String locatorKey) {
++        return browser.getValidationMessage(loc.getProperty(locatorKey));
++    }
++
++    /** Returns {@code true} when the 'Account Created!' confirmation is shown. */
++    public boolean isAccountCreatedVisible() {
++        return browser.isVisible(loc.getProperty("accountCreatedHeading"));
++    }
+ }
+--- a/src/test/java/com/bjitgroup/pages/ContactUsPage.java
++++ b/src/test/java/com/bjitgroup/pages/ContactUsPage.java
+@@ -59,6 +59,15 @@
+     }
+
+     public ContactUsPage clickSubmit() {
++        // The success banner is produced entirely client-side: the site binds a
++        // jQuery "submit" handler in an inline script at the very end of <body>,
++        // which shows .status.alert-success and cancels the real POST. That inline
++        // script sits behind blocking third-party scripts (Google Maps / ads), so
++        // the form fields are interactable seconds before the handler is bound.
++        // Clicking inside that window performs a native form POST instead: the page
++        // reloads and .status.alert-success comes back present-but-empty and hidden.
++        // Waiting for LOAD guarantees the inline script has executed.
++        browser.waitForPageLoad();
+         browser.acceptNextDialog();
+         input.click(loc.getProperty("submitButton"));
+         return this;
+--- a/src/test/java/com/bjitgroup/pages/ProductsPage.java
++++ b/src/test/java/com/bjitgroup/pages/ProductsPage.java
+@@ -64,7 +64,7 @@
+     public CartPage clickViewCartInModal() {
+         browser.waitForVisible(loc.getProperty("viewCartLink"));
+         input.click(loc.getProperty("viewCartLink"));
+-        return pages.cartPage();
++        return pages.cartPage().waitUntilLoaded();
+     }
+
+     public ProductsPage searchProduct(String term) {
+--- a/src/test/java/com/bjitgroup/pages/ProductDetailPage.java
++++ b/src/test/java/com/bjitgroup/pages/ProductDetailPage.java
+@@ -67,7 +67,7 @@
+     public CartPage clickViewCart() {
+         browser.waitForVisible(loc.getProperty("viewCartLink"));
+         input.click(loc.getProperty("viewCartLink"));
+-        return pages.cartPage();
++        return pages.cartPage().waitUntilLoaded();
+     }
+
+     public boolean isWriteReviewVisible() {
+@@ -82,6 +82,12 @@
+     }
+
+     public ProductDetailPage submitReview() {
++        // Same pattern as the contact form: the site binds its jQuery "submit"
++        // handler in an inline script at the end of <body>, behind the blocking
++        // adsbygoogle script. Until it is bound, clicking Submit performs a native
++        // form submit (the form has no action, so the page just reloads) and the
++        // success banner never appears. Waiting for LOAD guarantees it is bound.
++        browser.waitForPageLoad();
+         input.click(loc.getProperty("submitReviewButton"));
+         return this;
+     }
+--- a/src/test/java/com/bjitgroup/pages/CartPage.java
++++ b/src/test/java/com/bjitgroup/pages/CartPage.java
+@@ -19,11 +19,20 @@
+
+     public CartPage open() {
+         browser.navigate(URL);
+-        browser.waitForPageLoad();
+-        return this;
++        return waitUntilLoaded();
+     }
+
++    /**
++     * Waits until the browser has actually arrived on the cart page.
++     *
++     * <p>Waiting only for the LOAD state is not enough when arriving via a link
++     * click: if the click returns before the navigation commits, the previous
++     * page is already in LOAD state and the wait is a no-op. Waiting for the URL
++     * first pins the wait to the cart page, so non-waiting reads such as
++     * {@link #getCartItemCount()} cannot execute against the previous page.</p>
++     */
+     public CartPage waitUntilLoaded() {
++        browser.waitForUrlContains("/view_cart");
+         browser.waitForPageLoad();
+         return this;
+     }
+--- a/src/test/java/com/bjitgroup/tests/LoginTest.java
++++ b/src/test/java/com/bjitgroup/tests/LoginTest.java
+@@ -1,6 +1,7 @@
+ package com.bjitgroup.tests;
+
+ import com.bjitgroup.base.BaseTest;
++import com.bjitgroup.dataproviders.LoginDataProvider;
+ import com.bjitgroup.listeners.RetryAnalyzer;
+ import com.bjitgroup.pages.LoginPage;
+ import com.bjitgroup.utils.AccountHelper;
+@@ -85,22 +86,45 @@
+     // Test Case (sanity): Empty credentials should not allow login
+     @Test(
+             priority = 3,
+-            description = "Empty credentials should not allow login",
++            description = "Browser validation should block invalid login submissions",
++            dataProvider = "browserBlockedLoginData",
++            dataProviderClass = LoginDataProvider.class,
+             retryAnalyzer = RetryAnalyzer.class
+     )
+     @Severity(SeverityLevel.NORMAL)
+-    @Story("Empty Credentials")
+-    @Description("Submit empty credentials and verify required field messages.")
+-    public void emptyCredentialsShouldBlockLogin() {
+-        LoginPage loginPage = pages().loginPage();
++    @Story("Client-side validation")
++    @Description("Submit login data that fails HTML5 constraint validation and verify the browser blocks "
++            + "the request, leaving the expected field invalid.")
++    public void browserShouldBlockInvalidLoginSubmission(
++            String scenario, String email, String password, String fieldKey, String expectedFlag) {
+
++        LoginPage loginPage = pages().loginPage();
+         Allure.step("Open Login page", loginPage::open);
+-        Allure.step("Leave username empty", () -> loginPage.enterUsername(""));
+-        Allure.step("Leave password empty", () -> loginPage.enterPassword(""));
++
++        Allure.step("Enter credentials: " + scenario, () -> {
++            loginPage.enterEmail(email);
++            loginPage.enterPassword(password);
++        });
++
++        String urlBeforeSubmit = page().url();
+         Allure.step("Click Login button", loginPage::clickLogin);
+-        Allure.step("Verify Login page is still displayed", () ->
+-                Assertions.assertThat(loginPage.isLoginPageDisplayed())
+-                        .as("Login page should still be displayed after empty submission")
+-                        .isTrue());
++
++        // The browser refuses to submit, so the page never navigates. Asserting on
++        // the URL proves no request was sent; asserting only that the login page is
++        // still displayed would also pass if the form had round-tripped to /login.
++        Assertions.assertThat(page().url())
++                .as("[%s] No request should be sent, so the URL must not change", scenario)
++                .isEqualTo(urlBeforeSubmit);
++
++        Assertions.assertThat(loginPage.isFieldValid(fieldKey))
++                .as("[%s] Field '%s' should fail HTML5 validation. Browser message: '%s'",
++                        scenario, fieldKey, loginPage.getValidationMessage(fieldKey))
++                .isFalse();
++
++        // Assert the standard ValidityState flag rather than the message text,
++        // which varies by browser and locale.
++        Assertions.assertThat(loginPage.hasValidityFlag(fieldKey, expectedFlag))
++                .as("[%s] Field '%s' should report validity flag '%s'", scenario, fieldKey, expectedFlag)
++                .isTrue();
+     }
+ }
+\ No newline at end of file
+--- a/src/test/java/com/bjitgroup/tests/SignupTest.java
++++ b/src/test/java/com/bjitgroup/tests/SignupTest.java
+@@ -2,8 +2,10 @@
+
+ import com.bjitgroup.base.BaseTest;
+ import com.bjitgroup.context.TestAccountStore;
++import com.bjitgroup.dataproviders.SignupDataProvider;
+ import com.bjitgroup.pages.LoginPage;
+ import com.bjitgroup.pages.SignupPage;
++import com.bjitgroup.utils.AccountHelper;
+ import com.bjitgroup.utils.RandomDataUtils;
+ import io.qameta.allure.Description;
+ import io.qameta.allure.Feature;
+@@ -63,13 +65,25 @@
+     // Test Case 5: Register User with existing email
+     @Test(
+             priority = 2,
+-            description = "Register User with existing email",
+-            dependsOnMethods = "newUserShouldCompleteSignup"
++            description = "Register User with existing email"
+     )
+     @Severity(SeverityLevel.CRITICAL)
+     @Story("Signup")
+     @Description("Open signup/login, submit an already-registered email, and verify duplicate-email error.")
+     public void registerUserWithExistingEmailShouldShowError() {
++        // Arrange: provision a dedicated account so a known-existing email is
++        // guaranteed at assert time. This test must not reuse the shared
++        // TestAccountStore account, which DeleteUser can remove first depending
++        // on suite scheduling, invalidating the precondition.
++        String[] account = AccountHelper.createAccount(page());
++        String existingEmail = account[1];
++        String password = account[2];
++
++        // Return to guest state so the "New User Signup!" form is available
++        // (the Signup/Login header link is hidden while logged in).
++        pages().homePage().clickLogout();
++
++        // Act: attempt to register the same email again.
+         pages().homePage().open();
+         Assertions.assertThat(pages().homePage().isLoaded())
+                 .as("Home page should be visible").isTrue();
+@@ -80,11 +94,73 @@
+
+         pages().loginPage()
+                 .enterSignupName(RandomDataUtils.fullName())
+-                .enterSignupEmail(TestAccountStore.email())
++                .enterSignupEmail(existingEmail)
+                 .clickSignupExpectingError();
+
++        // Assert: duplicate-email error is shown.
+         Assertions.assertThat(pages().loginPage().getSignupErrorMessage())
+                 .as("Duplicate-email error message should be visible")
+                 .contains("Email Address already exist!");
++
++        // Cleanup: remove the account this test created so the site stays tidy
++        // and re-runs remain idempotent.
++        pages().loginPage().open().loginAs(existingEmail, password);
++        AccountHelper.deleteAccount(page());
++    }
++
++    // Test Case: Create Account with a mandatory field left empty
++    @Test(
++            priority = 3,
++            description = "Create Account should be blocked when a mandatory field is empty",
++            dataProvider = "mandatorySignupFields",
++            dataProviderClass = SignupDataProvider.class
++    )
++    @Severity(SeverityLevel.NORMAL)
++    @Story("Signup - client-side validation")
++    @Description("Fill every mandatory field, clear one, submit, and verify the browser blocks account "
++            + "creation and marks that field invalid.")
++    public void createAccountShouldBeBlockedWhenMandatoryFieldIsEmpty(String fieldName, String fieldKey) {
++        String firstName = RandomDataUtils.firstName();
++        String lastName = RandomDataUtils.lastName();
++
++        LoginPage loginPage = pages().loginPage().open();
++        SignupPage signupPage = loginPage.startSignup(firstName + " " + lastName, RandomDataUtils.email());
++        signupPage.waitUntilLoaded();
++
++        // Fill every mandatory field with valid data first, so the field under test
++        // is the only reason submission can fail.
++        signupPage.enterPassword(RandomDataUtils.password())
++                .enterFirstName(firstName)
++                .enterLastName(lastName)
++                .enterAddress(RandomDataUtils.address())
++                .selectCountry("India")
++                .enterState("Dhaka")
++                .enterCity("Dhaka")
++                .enterZipcode("1207")
++                .enterMobileNumber(RandomDataUtils.phone());
++
++        signupPage.clearField(fieldKey);
++
++        String urlBeforeSubmit = page().url();
++        signupPage.clickCreateAccount();
++
++        // No account is created by this test: the browser refuses to submit while a
++        // required field is empty, so the request never reaches the server.
++        Assertions.assertThat(page().url())
++                .as("[%s empty] No request should be sent, so the URL must not change", fieldName)
++                .isEqualTo(urlBeforeSubmit);
++
++        Assertions.assertThat(signupPage.isAccountCreatedVisible())
++                .as("[%s empty] 'Account Created!' must not be displayed", fieldName)
++                .isFalse();
++
++        Assertions.assertThat(signupPage.isFieldValid(fieldKey))
++                .as("[%s empty] Field should fail HTML5 validation. Browser message: '%s'",
++                        fieldName, signupPage.getValidationMessage(fieldKey))
++                .isFalse();
++
++        Assertions.assertThat(signupPage.hasValidityFlag(fieldKey, "valueMissing"))
++                .as("[%s empty] Field should report validity flag 'valueMissing'", fieldName)
++                .isTrue();
+     }
+-}
++}
+--- a/src/test/resources/locators/product-detail-page.properties
++++ b/src/test/resources/locators/product-detail-page.properties
+@@ -14,4 +14,4 @@
+ reviewEmailInput=input#email
+ reviewTextarea=textarea#review
+ submitReviewButton=button#button-review
+-reviewSuccess=div#review-section
++reviewSuccess=div#review-section .alert-success
+--- a/src/test/java/com/bjitgroup/dataproviders/LoginDataProvider.java
++++ b/src/test/java/com/bjitgroup/dataproviders/LoginDataProvider.java
+@@ -0,0 +1,39 @@
++package com.bjitgroup.dataproviders;
++
++import org.testng.annotations.DataProvider;
++
++/**
++ * Test data for login submissions that the browser rejects before any request
++ * is sent, because the email and password inputs are declared {@code required}
++ * and the email input is {@code type="email"}.
++ */
++public final class LoginDataProvider {
++
++    private LoginDataProvider() {
++    }
++
++    /**
++     * Login inputs that fail HTML5 constraint validation.
++     *
++     * <p>Columns: description, email, password, locator key of the field expected
++     * to be invalid, and the {@code ValidityState} flag expected on it.</p>
++     *
++     * <p>The flag is asserted rather than the browser's message text, because the
++     * message is browser- and locale-dependent and would break the suite on a
++     * non-English runner.</p>
++     *
++     * <p>No registered account is required: none of these rows reaches the
++     * server, so the email values only need to be well-formed or deliberately
++     * malformed.</p>
++     */
++    @DataProvider(name = "browserBlockedLoginData")
++    public static Object[][] browserBlockedLoginData() {
++        return new Object[][]{
++                {"Both fields empty", "", "", "emailInput", "valueMissing"},
++                {"Email empty, password provided", "", "Auto@123456", "emailInput", "valueMissing"},
++                {"Password empty, email provided", "qa.user@example.com", "", "passwordInput", "valueMissing"},
++                {"Malformed email without @", "not-an-email", "Auto@123456", "emailInput", "typeMismatch"},
++                {"Malformed email without domain", "user@", "Auto@123456", "emailInput", "typeMismatch"}
++        };
++    }
++}
+--- a/src/test/java/com/bjitgroup/dataproviders/SignupDataProvider.java
++++ b/src/test/java/com/bjitgroup/dataproviders/SignupDataProvider.java
+@@ -0,0 +1,37 @@
++package com.bjitgroup.dataproviders;
++
++import org.testng.annotations.DataProvider;
++
++/**
++ * Test data for the mandatory fields on the 'Enter Account Information' form.
++ */
++public final class SignupDataProvider {
++
++    private SignupDataProvider() {
++    }
++
++    /**
++     * Every field on the account information form that carries the HTML5
++     * {@code required} attribute.
++     *
++     * <p>Columns: display name of the field and its locator key in
++     * {@code locators/signup-page.properties}.</p>
++     *
++     * <p>Country is intentionally excluded: it is a required {@code <select>}
++     * that already defaults to India, so it cannot be emptied through the UI and
++     * has no unselected state to assert on.</p>
++     */
++    @DataProvider(name = "mandatorySignupFields")
++    public static Object[][] mandatorySignupFields() {
++        return new Object[][]{
++                {"Password", "passwordInput"},
++                {"First name", "firstNameInput"},
++                {"Last name", "lastNameInput"},
++                {"Address", "address1Input"},
++                {"State", "stateInput"},
++                {"City", "cityInput"},
++                {"Zipcode", "zipcodeInput"},
++                {"Mobile Number", "mobileNumberInput"}
++        };
++    }
++}

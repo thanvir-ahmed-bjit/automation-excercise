@@ -134,4 +134,38 @@ public final class SignupPage extends BasePage {
         input.click(loc.getProperty("logoutLink"));
         return pages.loginPage().waitUntilLoaded();
     }
+
+    // ---------------------------------------------------------------
+    // HTML5 constraint validation
+    //
+    // Password, First name, Last name, Address, Country, State, City, Zipcode
+    // and Mobile Number are all declared "required", so leaving any one empty
+    // makes the browser block submission without rendering a page error.
+    // ---------------------------------------------------------------
+
+    /** Clears the field named by the locator key. */
+    public SignupPage clearField(String locatorKey) {
+        input.fill(loc.getProperty(locatorKey), "");
+        return this;
+    }
+
+    /** Returns {@code true} when the field named by the locator key passes HTML5 validation. */
+    public boolean isFieldValid(String locatorKey) {
+        return browser.isFieldValid(loc.getProperty(locatorKey));
+    }
+
+    /** Returns a single {@code ValidityState} flag, e.g. {@code valueMissing}. */
+    public boolean hasValidityFlag(String locatorKey, String flag) {
+        return browser.hasValidityFlag(loc.getProperty(locatorKey), flag);
+    }
+
+    /** Returns the browser's native validation message for diagnostics. */
+    public String getValidationMessage(String locatorKey) {
+        return browser.getValidationMessage(loc.getProperty(locatorKey));
+    }
+
+    /** Returns {@code true} when the 'Account Created!' confirmation is shown. */
+    public boolean isAccountCreatedVisible() {
+        return browser.isVisible(loc.getProperty("accountCreatedHeading"));
+    }
 }

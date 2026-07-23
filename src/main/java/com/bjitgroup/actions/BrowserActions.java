@@ -5,6 +5,7 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitForSelectorState;
+import com.microsoft.playwright.options.WaitUntilState;
 
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -103,11 +104,21 @@ public final class BrowserActions {
 
     /**
      * Waits until the current URL contains the specified text.
+     *
+     * <p>Playwright's {@code waitForURL} defaults to {@code waitUntil=LOAD}, which
+     * blocks until every sub-resource has finished - including third-party ad and
+     * maps scripts that this site loads. Those resources are irrelevant to a URL
+     * assertion and can easily outlast the timeout, turning a successful navigation
+     * into a spurious {@code TimeoutError}. DOMCONTENTLOADED is the correct barrier
+     * here: the document is parsed and the URL is final, and callers follow this
+     * with an explicit element wait for real readiness.</p>
      */
     public void waitForUrlContains(String expectedUrlPart) {
         validateText(expectedUrlPart, "Expected URL part");
         Pattern urlPattern = Pattern.compile(".*" + Pattern.quote(expectedUrlPart) + ".*");
-        page.waitForURL(urlPattern, new Page.WaitForURLOptions().setTimeout(timeoutMs));
+        page.waitForURL(urlPattern, new Page.WaitForURLOptions()
+                .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
+                .setTimeout(timeoutMs));
     }
 
     /** Waits until DOMContentLoaded is reached. */
@@ -257,9 +268,80 @@ public final class BrowserActions {
         return page.evaluate(script);
     }
 
-    /** Registers a one-time dialog acceptor so the next dialog is auto-accepted. */
+    // ---------------------------------------------------------------
+    // HTML5 constraint validation
+    //
+    // Native validation bubbles ("Please fill out this field") are drawn by the
+    // browser itself, not inserted into the DOM, so no locator can ever find
+    // them. Waiting for a page-rendered error on a field that carries the HTML5
+    // "required" attribute therefore always ends in a timeout. These queries read
+    // the Constraint Validation API instead, which is what such fields actually
+    // expose.
+    // ---------------------------------------------------------------
+
+    /** Returns {@code true} when the field currently satisfies its HTML5 constraints. */
+    public boolean isFieldValid(String selector) {
+        validateSelector(selector);
+        return Boolean.TRUE.equals(
+                page.evalOnSelector(selector, "el => el.checkValidity()"));
+    }
+
+    /**
+     * Returns the browser's native validation message for the field, or an empty
+     * string when the field is valid.
+     *
+     * <p>The text is browser- and locale-dependent, so assert on
+     * {@link #hasValidityFlag(String, String)} in tests and use this only for
+     * diagnostics and failure messages.</p>
+     */
+    public String getValidationMessage(String selector) {
+        validateSelector(selector);
+        Object msg = page.evalOnSelector(selector, "el => el.validationMessage");
+        return msg == null ? "" : String.valueOf(msg);
+    }
+
+    /**
+     * Returns the state of a single {@code ValidityState} flag, for example
+     * {@code valueMissing} for an empty required field or {@code typeMismatch}
+     * for a malformed email address.
+     *
+     * <p>Preferred over message-text assertions because these flags are part of
+     * the HTML standard and do not change with browser locale.</p>
+     */
+    public boolean hasValidityFlag(String selector, String flag) {
+        validateSelector(selector);
+        validateText(flag, "Validity flag");
+        Object result = page.evalOnSelector(
+                selector, "(el, f) => { const v = el.validity; if (!(f in v)) "
+                        + "throw new Error('Unknown ValidityState flag: ' + f); return v[f]; }", flag);
+        return Boolean.TRUE.equals(result);
+    }
+
+    /**
+     * Returns the id of the first element in the document that fails HTML5
+     * validation, or an empty string when every field is valid. Useful for
+     * asserting which field the browser blocked submission on.
+     */
+    public String firstInvalidFieldId() {
+        // Scoped to controls: a <form> also matches :invalid when it contains an
+        // invalid control, which would otherwise be reported instead of the field.
+        Object id = page.evaluate(
+                "() => { const el = document.querySelector("
+                        + "'input:invalid, select:invalid, textarea:invalid'); "
+                        + "return el ? (el.id || el.name || el.tagName.toLowerCase()) : ''; }");
+        return id == null ? "" : String.valueOf(id);
+    }
+
+    /**
+     * Registers a one-time dialog acceptor so the next dialog is auto-accepted.
+     *
+     * <p>Uses {@code onceDialog} rather than {@code onDialog}: the latter stays
+     * registered for the lifetime of the page, so repeated calls accumulate
+     * handlers and a later handler would invoke {@code accept()} on a dialog that
+     * an earlier handler already handled.</p>
+     */
     public void acceptNextDialog() {
-        page.onDialog(dialog -> dialog.accept());
+        page.onceDialog(dialog -> dialog.accept());
     }
 
     /** Waits for the given number of milliseconds. */

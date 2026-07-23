@@ -19,11 +19,11 @@ public final class CartPage extends BasePage {
 
     public CartPage open() {
         browser.navigate(URL);
-        browser.waitForPageLoad();
-        return this;
+        return waitUntilLoaded();
     }
 
     public CartPage waitUntilLoaded() {
+        browser.waitForUrlContains("/view_cart");   // ← added
         browser.waitForPageLoad();
         return this;
     }

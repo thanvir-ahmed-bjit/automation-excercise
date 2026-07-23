@@ -82,6 +82,7 @@ public final class ProductDetailPage extends BasePage {
     }
 
     public ProductDetailPage submitReview() {
+        browser.waitForPageLoad();          // ← added
         input.click(loc.getProperty("submitReviewButton"));
         return this;
     }
