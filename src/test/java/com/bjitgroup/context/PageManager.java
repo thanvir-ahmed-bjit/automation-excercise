@@ -5,6 +5,7 @@ import com.bjitgroup.actions.InputActions;
 import com.bjitgroup.pages.AdminPage;
 import com.bjitgroup.pages.DashboardPage;
 import com.bjitgroup.pages.LoginPage;
+import com.bjitgroup.pages.SignupPage;
 import com.microsoft.playwright.Page;
 
 import java.util.Objects;
@@ -25,6 +26,7 @@ public final class PageManager {
     private LoginPage loginPage;
     private DashboardPage dashboardPage;
     private AdminPage adminPage;
+    private SignupPage signupPage;
 
     public PageManager(Page page, int timeoutMs) {
         Objects.requireNonNull(page, "Page must not be null");
@@ -55,5 +57,12 @@ public final class PageManager {
             adminPage = new AdminPage(browserActions, inputActions, this);
         }
         return adminPage;
+    }
+
+    public SignupPage signupPage() {
+        if (signupPage == null) {
+            signupPage = new SignupPage(browserActions, inputActions, this);
+        }
+        return signupPage;
     }
 }

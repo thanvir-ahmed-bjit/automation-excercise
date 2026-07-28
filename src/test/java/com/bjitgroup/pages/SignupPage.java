@@ -11,12 +11,35 @@ import java.util.Properties;
 import static com.bjitgroup.utils.PropertyReader.read;
 
 /**
- * Account information page for completing Automation Exercise signup.
+ * Signup and Account Information page for Automation Exercise.
+ *
+ * <h3>Locators</h3>
+ * All CSS/XPath selectors are externalised in
+ * {@code src/test/resources/locators/signup-page.properties}.
+ *
+ * <h3>Fluent interface</h3>
+ * Methods that stay on the same page return {@code this};
+ * navigation methods return the target page object or other pages.
+ *
+ * <h3>Validation helpers</h3>
+ * Methods with {@code is*} prefix query page state without waiting.
+ * Methods with {@code has*} prefix check HTML5 constraint validation flags.
+ * Methods with {@code get*} prefix extract text or attribute values.
+ *
+ * <p>Signup validation relies heavily on browser HTML5 constraint validation API.
+ * See {@link #hasValidityFlag(String, String)},
+ * {@link #isFieldValid(String)}, and
+ * {@link #getValidationMessage(String)} for constraint testing utilities.</p>
+ *
+ * @see BasePage
  */
 public final class SignupPage extends BasePage {
 
     private static final String HOME_URL = "https://automationexercise.com/";
     private static final String LOGIN_URL = "https://automationexercise.com/login";
+    private static final String DEFAULT_DOB_DAY = "10";
+    private static final String DEFAULT_DOB_MONTH = "5";
+    private static final String DEFAULT_DOB_YEAR = "1995";
     private final Properties loc = read("locators/signup-page.properties");
 
     public SignupPage(
@@ -27,22 +50,42 @@ public final class SignupPage extends BasePage {
         super(browser, input, pages);
     }
 
+    /**
+     * Navigates to the home page and waits for the home logo to become visible.
+     *
+     * @return this signup page
+     */
     public SignupPage openHomePage() {
         browser.navigate(HOME_URL);
         browser.waitForVisible(s("homeLogo"));
         return this;
     }
 
+    /**
+     * Navigates directly to the Automation Exercise login/signup page.
+     *
+     * @return this signup page, with the signup name input visible
+     */
     public SignupPage openAutomationExerciseLogin() {
         browser.navigate(LOGIN_URL);
         browser.waitForVisible(s("signupNameInput"));
         return this;
     }
 
+    /**
+     * Checks whether the home page logo is currently visible.
+     *
+     * @return {@code true} if the logo is visible; otherwise {@code false}
+     */
     public boolean isHomePageVisible() {
         return browser.isVisible(s("homeLogo"));
     }
 
+    /**
+     * Clicks the Signup/Login navigation link from the home page.
+     *
+     * @return this signup page
+     */
     public SignupPage clickSignupLoginFromHome() {
         input.click(s("signupLoginLink"));
         browser.waitForVisible(s("signupNameInput"));
@@ -217,6 +260,11 @@ public final class SignupPage extends BasePage {
         return this;
     }
 
+    /**
+     * Returns the currently selected country value from the country dropdown.
+     *
+     * @return the selected country name (e.g., "India", "United States")
+     */
     public String selectedCountry() {
         return browser.inputValueOf(s("countrySelect"));
     }
@@ -286,7 +334,7 @@ public final class SignupPage extends BasePage {
     ) {
         return selectMrTitle()
                 .enterPassword(password)
-                .setBirthDate("10", "5", "1995")
+                .setBirthDate(DEFAULT_DOB_DAY, DEFAULT_DOB_MONTH, DEFAULT_DOB_YEAR)
                 .enterFirstName(firstName)
                 .enterLastName(lastName)
                 .enterAddress(address)
@@ -334,7 +382,7 @@ public final class SignupPage extends BasePage {
     ) {
         return selectMrTitle()
                 .enterPassword(password)
-                .setBirthDate("10", "5", "1995")
+                .setBirthDate(DEFAULT_DOB_DAY, DEFAULT_DOB_MONTH, DEFAULT_DOB_YEAR)
                 .checkNewsletter()
                 .checkSpecialOffers()
                 .enterFirstName(firstName)
@@ -403,20 +451,45 @@ public final class SignupPage extends BasePage {
         return this;
     }
 
-    /** Returns {@code true} when the field named by the locator key passes HTML5 validation. */
+    /**
+     * Checks whether the specified form field passes HTML5 constraint validation.
+     *
+     * <p>This method calls {@code HTMLInputElement.checkValidity()} on the field.
+     * It returns immediately without waiting for the field state to change.</p>
+     *
+     * @param locatorKey the field identifier in signup-page.properties
+     * @return {@code true} if the field passes validation; {@code false} otherwise
+     * @throws IllegalArgumentException if the locator key is not supported
+     */
     public boolean isFieldValid(String locatorKey) {
         Object result = browser.locator(selectorForKey(locatorKey)).evaluate("el => el.checkValidity()");
         return Boolean.TRUE.equals(result);
     }
 
-    /** Returns a single {@code ValidityState} flag, e.g. {@code valueMissing}. */
+    /**
+     * Checks a specific HTML5 {@code ValidityState} flag for the field.
+     *
+     * <p>Common flags: {@code valueMissing}, {@code typeMismatch}, {@code tooShort},
+     * {@code tooLong}, {@code patternMismatch}, {@code badInput}.</p>
+     *
+     * @param locatorKey the field identifier in signup-page.properties
+     * @param flag the validity flag name (e.g., "valueMissing")
+     * @return {@code true} if the flag is set; otherwise {@code false}
+     */
     public boolean hasValidityFlag(String locatorKey, String flag) {
         Object result = browser.locator(selectorForKey(locatorKey))
                 .evaluate("(el, f) => Boolean(el.validity && el.validity[f])", flag);
         return Boolean.TRUE.equals(result);
     }
 
-    /** Returns the browser's native validation message for diagnostics. */
+    /**
+     * Returns the browser's native HTML5 validation message for a field.
+     *
+     * <p>Useful for test diagnostics. Returns empty string if no message is available.</p>
+     *
+     * @param locatorKey the field identifier in signup-page.properties
+     * @return the validation message, or empty string if not applicable
+     */
     public String getValidationMessage(String locatorKey) {
         Object message = browser.locator(selectorForKey(locatorKey))
                 .evaluate("el => el.validationMessage || ''");
