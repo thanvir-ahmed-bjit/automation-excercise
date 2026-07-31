@@ -1,3 +1,7 @@
+# Test Cases - Automation Exercise
+
+**Application URL:** http://automationexercise.com  
+**Total Test Cases:** 57
 ##Signup Page Test Cases
 
 ## Test Case 1: Register User
