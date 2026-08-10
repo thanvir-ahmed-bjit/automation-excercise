@@ -13,18 +13,25 @@
        verbose="1">
 
 
-    <!-- Smoke / Authentication -->
+    <!-- Automation Exercise: Signup / Login (Smoke / Authentication) -->
+    <test name="Signup Tests">
+        <classes>
+            <class name="com.bjitgroup.tests.SignupTest"/>
+        </classes>
+    </test>
+
     <test name="Login Tests">
         <classes>
             <class name="com.bjitgroup.tests.LoginTest"/>
         </classes>
     </test>
 
-    <test name="Logout Tests">
-        <classes>
-            <class name="com.bjitgroup.tests.LogoutTest"/>
-        </classes>
-    </test>
+    <!-- OrangeHRM tests: not part of the Automation Exercise scope, kept for framework parity only -->
+<!--    <test name="Logout Tests">-->
+<!--        <classes>-->
+<!--            <class name="com.bjitgroup.tests.LogoutTest"/>-->
+<!--        </classes>-->
+<!--    </test>-->
 
     <!-- Admin User CRUD -->
 <!--    <test name="User Management Tests">-->
