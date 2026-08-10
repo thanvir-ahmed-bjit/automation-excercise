@@ -105,8 +105,10 @@ public class SignupTest extends BaseTest {
     @Description("Leave signup name/email empty and verify HTML5 required validation blocks submission.")
     public void signupWithEmptyNameShouldBlockSubmission() {
         SignupPage signupPage = pages().signupPage();
-        String before = page().url();
         Allure.step("Navigate to login page", signupPage::openAutomationExerciseLogin);
+        // Captured after navigation completes so the baseline reflects the actual
+        // Signup/Login page URL, not the fresh page's initial "about:blank" state.
+        String before = page().url();
         Allure.step("Click signup without entering name/email", signupPage::clickSignup);
         Allure.step("Verify URL did not change", () ->
                 Assertions.assertThat(page().url())

@@ -35,8 +35,8 @@ import static com.bjitgroup.utils.PropertyReader.read;
  */
 public final class SignupPage extends BasePage {
 
-    private static final String HOME_URL = "https://automationexercise.com/";
-    private static final String LOGIN_URL = "https://automationexercise.com/login";
+    private static final String HOME_PATH = "/";
+    private static final String LOGIN_PATH = "/login";
     private static final String DEFAULT_DOB_DAY = "10";
     private static final String DEFAULT_DOB_MONTH = "5";
     private static final String DEFAULT_DOB_YEAR = "1995";
@@ -56,7 +56,7 @@ public final class SignupPage extends BasePage {
      * @return this signup page
      */
     public SignupPage openHomePage() {
-        browser.navigate(HOME_URL);
+        browser.navigate(HOME_PATH);
         browser.waitForVisible(s("homeLogo"));
         return this;
     }
@@ -67,7 +67,7 @@ public final class SignupPage extends BasePage {
      * @return this signup page, with the signup name input visible
      */
     public SignupPage openAutomationExerciseLogin() {
-        browser.navigate(LOGIN_URL);
+        browser.navigate(LOGIN_PATH);
         browser.waitForVisible(s("signupNameInput"));
         return this;
     }
